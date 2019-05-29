@@ -59,9 +59,9 @@ int (*call_vec[])(void) = {
 	no_sys,		/* 45 = unused	*/
 	do_set,		/* 46 = setgid	*/
 	do_get,		/* 47 = getgid	*/
-	no_sys,		/* 48 = (signal)*/
-	no_sys,		/* 49 = unused	*/
-	no_sys,		/* 50 = lstat	*/
+        no_sys,		/* 48 = (stat)	*/
+        no_sys,		/* 49 = (stat)	*/
+        no_sys,		/* 50 = (stat)	*/
 	no_sys,		/* 51 = (stat)	*/
 	no_sys,		/* 52 = (fstat)	*/
 	no_sys,		/* 53 = (lstat)	*/
@@ -80,8 +80,10 @@ int (*call_vec[])(void) = {
 	do_set, 	/* 66 = setgroups */
 	do_getmcontext,	/* 67 = getmcontext */
 	do_setmcontext,	/* 68 = setmcontext */
-	no_sys,		/* 69 = unused	*/
-	no_sys,		/* 70 = unused	*/
+	/* Added by EKA*/
+	do_enable_hardening, /* 69 = (enable_hardening)*/
+	do_disable_hardening,		/* 70 = disable_hardening	*/
+        /* End added by EKA*/
 	do_sigaction,	/* 71 = sigaction   */
 	do_sigsuspend,	/* 72 = sigsuspend  */
 	do_sigpending,	/* 73 = sigpending  */
@@ -90,7 +92,9 @@ int (*call_vec[])(void) = {
 	do_reboot,	/* 76 = reboot	*/
 	do_svrctl,	/* 77 = svrctl	*/
 	do_sysuname,	/* 78 = sysuname */
-	no_sys,		/* 79 = unused */
+        /* Added by EKA*/
+	do_hardening,		/* 79 = hardening	*/
+        /* End added by EKA*/
 	no_sys,		/* 80 = (getdents) */
 	no_sys, 	/* 81 = unused */
 	no_sys, 	/* 82 = (fstatfs) */
@@ -126,5 +130,7 @@ int (*call_vec[])(void) = {
  	no_sys, 	/* 112 = gcov_flush */
 	do_get,		/* 113 = getsid	*/
 };
+
+
 /* This should not fail with "array size is negative": */
 extern int dummy[sizeof(call_vec) == NCALLS * sizeof(call_vec[0]) ? 1 : -1];

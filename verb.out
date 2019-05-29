@@ -1,0 +1,22 @@
+./include/arch/i386/include/fpu.h:union fpu_state_u {
+./include/arch/i386/include/archtypes.h:	char	*fpu_state;
+./include/arch/earm/include/archtypes.h:	char	*fpu_state;
+./kernel/arch/i386/arch_system.c:	char *state = pr->p_seg.fpu_state;
+./kernel/arch/i386/arch_system.c:static char fpu_state[NR_PROCS][FPU_XFP_SIZE] __aligned(FPUALIGN);
+./kernel/arch/i386/arch_system.c:		v = fpu_state[pr->p_nr];
+./kernel/arch/i386/arch_system.c:	pr->p_seg.fpu_state = v;
+./kernel/arch/i386/arch_system.c:	char *state = pr->p_seg.fpu_state;
+./kernel/arch/i386/arch_system.c:		fp_error = sc->sc_fpu_state.xfp_regs.fp_status &
+./kernel/arch/i386/arch_system.c:			~sc->sc_fpu_state.xfp_regs.fp_control;
+./kernel/arch/i386/arch_system.c:		fp_error = sc->sc_fpu_state.fpu_regs.fp_status &
+./kernel/arch/i386/arch_system.c:			~sc->sc_fpu_state.fpu_regs.fp_control;
+./kernel/system/do_sigsend.c:	    memcpy(&sc.sc_fpu_state, rp->p_seg.fpu_state, FPU_XFP_SIZE);
+./kernel/system/do_sigreturn.c:	memcpy(rp->p_seg.fpu_state, &sc.sc_fpu_state, FPU_XFP_SIZE);
+./kernel/system/do_mcontext.c:	memcpy(&(mc.mc_fpu_state), rp->p_seg.fpu_state, FPU_XFP_SIZE);
+./kernel/system/do_mcontext.c:	memcpy(rp->p_seg.fpu_state, &(mc.mc_fpu_state), FPU_XFP_SIZE);
+./kernel/system/do_fork.c:  old_fpu_save_area_p = rpc->p_seg.fpu_state;
+./kernel/system/do_fork.c:  rpc->p_seg.fpu_state = old_fpu_save_area_p;
+./kernel/system/do_fork.c:	memcpy(rpc->p_seg.fpu_state, rpp->p_seg.fpu_state, FPU_XFP_SIZE);
+./sys/arch/i386/include/signal.h:  union fpu_state_u sc_fpu_state;
+./sys/arch/i386/include/mcontext.h:  union fpu_state_u mc_fpu_state;
+./test/test62.c:  memset(&sc->sc_fpu_state, count, sizeof(sc->sc_fpu_state));

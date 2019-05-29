@@ -19,7 +19,7 @@ SRCS+= dhcp_gettag.c dhcp_settag.c
 SRCS+= gcov.c gcov_flush.c
 
 # Various utils
-SRCS+= itoa.c u64util.c read_tsc_64.c
+SRCS+= itoa.c u64util.c read_tsc_64.c h_read_tsc.c h_read_tsc_64.c
 
 # svrctl
 SRCS+= svrctl.c
@@ -32,7 +32,8 @@ SRCS+= paramvalue.c
 
 # Minix servers/drivers syscall.
 SRCS+= 	getngid.c getnpid.c getnprocnr.c getnucred.c getnuid.c getprocnr.c \
-	mapdriver.c vm_memctl.c vm_set_priv.c vm_query_exit.c vm_update.c
+	mapdriver.c vm_memctl.c vm_set_priv.c vm_query_exit.c vm_update.c \
+        
 
 SRCS+= oneC_sum.c
 

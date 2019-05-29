@@ -8,7 +8,10 @@
 #include "kernel/system.h"
 
 #include <minix/endpoint.h>
-
+/** Added by EKA */
+#include "../arch/i386/hproto.h"
+#include "../arch/i386/htype.h"
+/** End added by EKA */
 #if USE_CLEAR
 
 /*===========================================================================*
@@ -44,12 +47,25 @@ int do_clear(struct proc * caller, message * m_ptr)
       } 
   }
 
+  /* Add by EKA: free the PE working set list */
+   if(rc->p_hflags & PROC_TO_HARD){
+      printf("### clearing proc: %s %d ticks: %d user: %d sys: %d#### "
+             "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d\n", 
+         rc->p_name, rc->p_endpoint, rc->p_ticks, rc->p_user_time, 
+         rc->p_sys_time, rc->p_nb_pe, rc->p_nb_nmi, rc->p_lus1_us2_size,
+         rc->p_nb_abort, rc->p_nb_ss);
+      free_pram_mem_blocks(rc, 1);
+      handle_hsr_events(rc);
+      free_hsrs(rc);
+      reset_hardening_attri(rc);
+  }
+  /**End Add by EKA**/
+
   /* Remove the process' ability to send and receive messages */
   clear_endpoint(rc);
 
   /* Turn off any alarm timers at the clock. */   
   reset_timer(&priv(rc)->s_alarm_timer);
-
   /* Make sure that the exiting process is no longer scheduled,
    * and mark slot as FREE. Also mark saved fpu contents as not significant.
    */

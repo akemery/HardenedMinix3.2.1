@@ -17,6 +17,11 @@
 #include <minix/endpoint.h>
 #include <minix/u64.h>
 
+/*** Added by EKA**/
+#include "../arch/i386/htype.h"
+#include "../arch/i386/hproto.h"
+/*** End added by EKA**/
+
 #if USE_FORK
 
 /*===========================================================================*
@@ -33,6 +38,7 @@ int do_fork(struct proc * caller, message * m_ptr)
   int gen;
   int p_proc;
   int namelen;
+  static int hcount = 0; 
 
   if(!isokendpt(m_ptr->PR_ENDPT, &p_proc))
 	return EINVAL;
@@ -122,7 +128,41 @@ int do_fork(struct proc * caller, message * m_ptr)
   rpc->p_seg.p_ttbr = 0;
   rpc->p_seg.p_ttbr_v = NULL;
 #endif
-
+/*** Add by EKA**/
+  rpc->p_setcow = 0; 
+  rpc->p_hflags = 0;
+  if(hprocs_in_use <= H_NPROCS_TO_START_H)
+  hprocs_in_use++;
+   
+  if(hprocs_in_use > 800){
+      rpc->p_setcow = 1; 
+  }
+  
+  rpc->p_ticks = 0;
+   
+  if(h_can_start_hardening){
+      rpc->p_hflags |= PROC_TO_HARD;
+      hc_proc_nr[(hcount++)%10] = rpc->p_nr;
+  }
+  rpc->p_lus1_us2_size = 0;
+  rpc->p_lus1_us2 = NULL;
+  rpc->p_hardening_mem_events = NULL;
+  rpc->p_nb_hardening_mem_events = 0;
+  rpc->p_hardening_shared_regions = NULL;
+  rpc->p_nb_hardening_shared_regions = 0;
+  rpc->p_nb_nmi = 0;
+  rpc->p_nb_pe = 0;
+  rpc->p_ticks = 0;
+  rpc->p_nb_abort = 0;
+  rpc->p_nb_ss = 0;
+  if(rpp->p_hflags & PROC_TO_HARD){
+#if H_DEBUG
+     display_mem(rpp);
+#endif
+     set_fork_label(rpp);
+     //free_pram_mem_blocks(rpp, 0);
+  }
+/** End Add by EKA**/
   return OK;
 }
 

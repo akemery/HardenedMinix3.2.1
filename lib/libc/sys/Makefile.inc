@@ -11,7 +11,7 @@ SRCS+=	__clone.S __vfork14.S brk.S exect.S fork.S pipe.S \
 	syscall.S __syscall.S __clone.S cerror.S
 
 # other sources shared with the kernel, used in syscalls
-SRCS+=	cpuset.c
+SRCS+=	cpuset.c enable_hardening.c disable_hardening.c hardening.c
 
 _LSRC+=	Lint___clone.c Lint___vfork14.c Lint_brk.c Lint_clone.c \
 	Lint_getcontext.c Lint_exect.c Lint_pipe.c Lint_ptrace.c \

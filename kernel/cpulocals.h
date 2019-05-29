@@ -82,6 +82,9 @@ DECLARE_CPULOCAL(u64_t ,tsc_ctr_switch); /* when did we switched time accounting
 DECLARE_CPULOCAL(u64_t, cpu_last_tsc);
 DECLARE_CPULOCAL(u64_t, cpu_last_idle);
 
+/*Added by EKA*/
+DECLARE_CPULOCAL(u64_t, ins_ctr_switch); /*instruction counter state when context switch*/
+/* End added by EKA*/
 
 DECLARE_CPULOCAL(char ,fpu_presence); /* whether the cpu has FPU or not */
 DECLARE_CPULOCAL(struct proc * ,fpu_owner); /* who owns the FPU of the local cpu */

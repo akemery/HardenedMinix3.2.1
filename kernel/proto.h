@@ -144,6 +144,12 @@ void init_profile_clock(u32_t);
 void stop_profile_clock(void);
 #endif
 
+/*Added by EKA*/
+/**hcow.c***/
+
+int hmini_receive(struct proc * caller_ptr, endpoint_t src_e, 
+                         message * m_buff_usr, const int flags);
+/*End added by EKA*/
 /* functions defined in architecture-dependent files. */
 void prot_init();
 void arch_post_init();

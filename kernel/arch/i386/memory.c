@@ -24,6 +24,15 @@
 #endif
 #endif
 
+/** Add by EKA **/
+#include "htype.h"
+#include "hproto.h"
+
+static int lin_lin_cmp(struct proc *srcproc, vir_bytes srclinaddr,
+		struct proc *dstproc, vir_bytes dstlinaddr, vir_bytes bytes);
+
+/* End added by EKA*/
+
 phys_bytes video_mem_vaddr = 0;
 
 #define HASPT(procptr) ((procptr)->p_seg.p_cr3 != 0)
@@ -31,7 +40,6 @@ static int nfreepdes = 0;
 #define MAXFREEPDES	2
 static int freepdes[MAXFREEPDES];
 
-static u32_t phys_get32(phys_bytes v);
 
 void mem_clear_mapcache(void)
 {
@@ -226,7 +234,7 @@ static int lin_lin_copy(struct proc *srcproc, vir_bytes srclinaddr,
 }
 
 
-static u32_t phys_get32(phys_bytes addr)
+u32_t phys_get32(phys_bytes addr)
 {
 	u32_t v;
 	int r;
@@ -500,6 +508,11 @@ void delivermsg(struct proc *rp)
 	if(!(rp->p_misc_flags & MF_CONTEXT_SET)) {
 		rp->p_reg.retreg = r;
 	}
+        /** Added by EKA**/
+        if(rp->p_hflags & PROC_TO_HARD){
+           add_hme_event(rp, rp->p_delivermsg_vir, sizeof(message) );
+        }
+                /** End Added by EKA**/
 }
 
 #if 0
@@ -699,9 +712,23 @@ int vmcheck;			/* if nonzero, can return VMSUSPEND */
   	if(r == EFAULT_SRC) {
   		lin = vir_addr[_SRC_]->offset;
   		target = procs[_SRC_];
+  /** Added by EKA**/
+#if H_DEBUG
+                if(procs[_DST_] && (procs[_DST_]->p_hflags & PROC_TO_HARD))
+                    printf("virtual_copy_f: efault src %d 0x%lx 0x%lx\n",
+                       procs[_DST_]->p_nr, vir_addr[_DST_]->offset, bytes );
+#endif
+  /** End Added by EKA**/
   	} else if(r == EFAULT_DST) {
   		lin = vir_addr[_DST_]->offset;
   		target = procs[_DST_];
+   /** Added by EKA**/
+#if H_DEBUG
+                if(procs[_DST_] && (procs[_DST_]->p_hflags & PROC_TO_HARD))
+                    printf("virtual_copy_f: efault dst %d 0x%lx 0x%lx\n",
+                       procs[_DST_]->p_nr, vir_addr[_DST_]->offset, bytes );
+#endif
+  /** End Added by EKA**/
   	} else {
   		panic("r strange: %d",  r);
   	}
@@ -712,6 +739,12 @@ int vmcheck;			/* if nonzero, can return VMSUSPEND */
 	vm_suspend(caller, target, lin, bytes, VMSTYPE_KERNELCALL);
 	return VMSUSPEND;
   }
+
+  /** Added by EKA**/
+  if(procs[_DST_] && (procs[_DST_]->p_hflags & PROC_TO_HARD)){
+     add_hme_event(procs[_DST_], vir_addr[_DST_]->offset, bytes);
+  }
+  /** End Added by EKA**/
 
   return OK;
 }
@@ -1062,3 +1095,105 @@ int platform_tbl_ptr(phys_bytes start,
 	}
 	return 0;
 }
+
+/* Added By EKA**/
+
+/*===========================================================================*
+ *				lin_lin_cmp				     *
+ *===========================================================================*/
+static int lin_lin_cmp(struct proc *srcproc, vir_bytes srclinaddr,
+		struct proc *dstproc, vir_bytes dstlinaddr, vir_bytes bytes)
+{
+	u32_t addr;
+	proc_nr_t procslot;
+	int  r  = OK;
+
+	//printf("src 0x%lx, dst 0x%lx\n", srclinaddr, dstlinaddr);
+	assert(get_cpulocal_var(ptproc));
+	assert(get_cpulocal_var(proc_ptr));
+	assert(read_cr3() == get_cpulocal_var(ptproc)->p_seg.p_cr3);
+
+	procslot = get_cpulocal_var(ptproc)->p_nr;
+
+	assert(procslot >= 0 && procslot < I386_VM_DIR_ENTRIES);
+
+	if(srcproc) assert(!RTS_ISSET(srcproc, RTS_SLOT_FREE));
+	if(dstproc) assert(!RTS_ISSET(dstproc, RTS_SLOT_FREE));
+	assert(!RTS_ISSET(get_cpulocal_var(ptproc), RTS_SLOT_FREE));
+	assert(get_cpulocal_var(ptproc)->p_seg.p_cr3_v);
+	if(srcproc) assert(!RTS_ISSET(srcproc, RTS_VMINHIBIT));
+	if(dstproc) assert(!RTS_ISSET(dstproc, RTS_VMINHIBIT));
+
+	while(bytes > 0) {
+		phys_bytes srcptr, dstptr;
+		vir_bytes chunk = bytes;
+		int changed = 0;
+
+
+
+		/* Set up 4MB ranges. */
+		srcptr = createpde(srcproc, srclinaddr, &chunk, 0, &changed);
+		dstptr = createpde(dstproc, dstlinaddr, &chunk, 1, &changed);
+		if(changed)
+			reload_cr3();
+
+		/* Compare pages. */
+		if(phys_cmp(srcptr, dstptr, chunk)) {
+
+			r = EFAULT;
+
+		}
+
+		/* Update counter and addresses for next iteration, if any. */
+		bytes -= chunk;
+		srclinaddr += chunk;
+		dstlinaddr += chunk;
+
+	}
+
+	if(srcproc) assert(!RTS_ISSET(srcproc, RTS_SLOT_FREE));
+	if(dstproc) assert(!RTS_ISSET(dstproc, RTS_SLOT_FREE));
+	assert(!RTS_ISSET(get_cpulocal_var(ptproc), RTS_SLOT_FREE));
+	assert(get_cpulocal_var(ptproc)->p_seg.p_cr3_v);
+
+	return r;
+}
+
+
+int cmp_frames(u32_t frame1, u32_t frame2){
+
+   if(lin_lin_cmp(NULL, frame1, NULL, frame2, I386_PAGE_SIZE)!=OK){
+
+		return EFAULT;
+
+	}
+    return(OK);
+}
+
+
+int cpy_frames(u32_t src, u32_t dst){
+
+   if(lin_lin_copy(NULL, src, NULL, dst, I386_PAGE_SIZE)!=OK){
+
+		return EFAULT;
+
+	}
+    return(OK);
+}
+
+/* This function is used to modified the data at addr
+ * We used it to modified the value of the   page table entries
+ * add at 30/12/2014                    
+ */
+int phys_set32(phys_bytes addr, u32_t *v)
+{
+   int r;
+   if((r=lin_lin_copy(proc_addr(SYSTEM), (vir_bytes) v,
+	NULL, addr , sizeof(u32_t))) != OK) {
+	return(r);
+   }
+   return(OK);
+}
+
+/* End Added by EKA**/
+

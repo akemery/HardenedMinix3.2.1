@@ -167,7 +167,12 @@ irq_hook_t *hook;
    * as an argument. 
    */
   priv(proc_addr(proc_nr))->s_int_pending |= (1 << hook->notify_id);
-
+   /* Added by EKA */
+#if 0
+     printf("&&&&&& INTERRUPT &&&&&&&&&& p: %d irq: %d h_p: %d\n"
+          , hook->proc_nr_e, hook->irq, h_proc_nr );
+#endif
+  /* End added by EKA*/
   /* Build notification message and return. */
   mini_notify(proc_addr(HARDWARE), hook->proc_nr_e);
   return(hook->policy & IRQ_REENABLE);

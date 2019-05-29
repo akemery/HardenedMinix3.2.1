@@ -42,6 +42,12 @@
 #include <minix/endpoint.h>
 #include <minix/safecopies.h>
 
+/** Added by EKA**/
+#include "arch/i386/htype.h"
+#include "arch/i386/hproto.h"
+
+/** End added by EKA **/
+
 /* Declaration of the call vector that defines the mapping of system calls 
  * to handler functions. The vector is initialized in sys_init() with map(), 
  * which makes sure the system call numbers are ok. No space is allocated, 
@@ -138,6 +144,12 @@ void kernel_call(message *m_user, struct proc * caller)
   message msg;
 
   caller->p_delivermsg_vir = (vir_bytes) m_user;
+
+   /* Added by EKA*/
+  if(h_unstable_state == H_UNSTABLE)
+       printf("ALERT ALERT FROM KERNEL CALL !!!!! \n "
+              "The system is in unstable state The guilty is %d\n", h_proc_nr);
+  /* End Added by EKA*/
   /*
    * the ldt and cr3 of the caller process is loaded because it just've trapped
    * into the kernel or was already set in switch_to_user() before we resume
@@ -261,6 +273,15 @@ void system_init(void)
   /* Scheduling */
   map(SYS_SCHEDULE, do_schedule);	/* reschedule a process */
   map(SYS_SCHEDCTL, do_schedctl);	/* change process scheduler */
+
+    /*Added by EKA Hardening */
+  map(SYS_HMEM_MAP, do_hmem_map);       /*update cow data from vm to kernel*/
+
+  map(SYS_HARDENING, do_hardening);     /* enable or disable hardening*/
+  map(SYS_FREEPMBS, do_free_pmbs);     /* free the ws list*/
+  map(SYS_ADDREGIONTOWS, do_addregionto_ws);  /*add region to ws*/
+  /*End added by EKA Hardening */
+
 
 }
 /*===========================================================================*
@@ -405,6 +426,20 @@ int sig_nr;			/* signal to be sent */
   rp = proc_addr(proc_nr);
   sig_mgr = priv(rp)->s_sig_mgr;
   if(sig_mgr == SELF) sig_mgr = rp->p_endpoint;
+
+    /** Added by EKA**/
+  if(h_unstable_state == H_UNSTABLE){
+       printf("ALERT ALERT FROM cause sig !!!!! \n "
+              "The system is in unstable state the guilty is %d %d %d\n", 
+             h_proc_nr, sig_nr, proc_nr);
+       return;
+  }
+
+   if(h_enable)
+       printf("FROM cause sig !!!!! \n "
+              "The system got a signal %d %d %d\n", 
+             h_proc_nr, sig_nr, proc_nr);
+  /** end added by EKA **/
 
   /* If the target is the signal manager of itself, send the signal directly. */
   if(rp->p_endpoint == sig_mgr) {

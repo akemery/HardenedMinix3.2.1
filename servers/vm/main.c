@@ -45,6 +45,10 @@ extern int missing_spares;
 
 #include <signal.h>
 
+/* Added by EKA*/
+#include "htype.h"
+/* End added by EKA*/
+
 /* Table of calls and a macro to test for being in range. */
 struct {
 	int (*vmc_func)(message *);	/* Call handles message. */
@@ -111,7 +115,23 @@ int main(void)
 		panic("invalid caller %d", who_e);
 	c = CALLNUMBER(msg.m_type);
 	result = ENOSYS; /* Out of range or restricted calls return this. */
-	
+	 /** Added by EKA**/
+         /**That is a hardening page fault. The kernel inform the VM
+         ** VM called the handler do_hpagefault **/
+        if ((msg.m_type == VM_HR1PAGEFAULT)||(msg.m_type == VM_HR2PAGEFAULT)){
+              do_hpagefaults(&msg);
+             continue;
+        }
+
+        if((msg.m_type == VM_TELL_VM_H_ENABLE)|| 
+             (msg.m_type == VM_TELL_VM_H_DISABLE) || 
+             (msg.m_type == VM_TELL_VM_H_ENABLE_P) ||
+              (msg.m_type == VM_TELL_VM_H_DISABLE_P)){
+             do_hardening(&msg);
+             continue;
+        }
+      
+        /** End added by EKA**/
 	if(msg.m_type == RS_INIT && msg.m_source == RS_PROC_NR) {
 		result = do_rs_init(&msg);
 	} else if (msg.m_type == VM_PAGEFAULT) {
@@ -309,6 +329,12 @@ void init_vm(void)
 	multiboot_module_t *mod;
 	vir_bytes kern_dyn, kern_static;
 
+         /* Added by EKA*/
+        struct pram_mem_block *pmb;
+       
+        //int  vm_can_start_hardening = 0;
+        /* End added by EKA*/
+
 #if SANITYCHECKS
 	incheck = nocheck = 0;
 #endif
@@ -332,10 +358,30 @@ void init_vm(void)
 	/* Set table to 0. This invalidates all slots (clear VMF_INUSE). */
 	memset(vmproc, 0, sizeof(vmproc));
 
+	
+        /*Added by EKA*/
+        int hardening_enabled = 0;
+         /*End added by EKA*/
+
 	for(i = 0; i < ELEMENTS(vmproc); i++) {
 		vmproc[i].vm_slot = i;
+                /*Added by EKA*/
+                vmproc[i].vm_hflags = 0;
+                vmproc[i].vm_lus1_us2_size = 0;
+                vmproc[i].vm_lus1_us2 = NULL;
+                /*End added by EKA*/
 	}
-
+        /*Added by EKA*/
+        /**Initialize the hardening copy-on-write data structure table**/
+        for(pmb = BEG_PRAM_MEM_BLOCK_ADDR;pmb < END_PRAM_MEM_BLOCK_ADDR; pmb++){
+             pmb->flags = PRAM_SLOT_FREE;
+             pmb->vaddr = 0;
+             pmb->us0 = 0;
+             pmb->us1 = 0;
+             pmb->us2 = 0;
+ 
+        }
+         /*End added by EKA*/
 	/* region management initialization. */
 	map_region_init();
 

@@ -65,7 +65,10 @@
 #define SETGROUPS_O	  66
 #define GETMCONTEXT       67
 #define SETMCONTEXT       68
-
+/* Added by EKA*/
+#define PM_ENABLE_HARDENING    69  /* to PM */
+#define PM_DISABLE_HARDENING   70 /* to PM */
+/* End added by EKA*/
 /* Posix signal handling. */
 #define SIGACTION	  71
 #define SIGSUSPEND	  72
@@ -76,6 +79,9 @@
 #define REBOOT		  76
 #define SVRCTL		  77
 #define SYSUNAME	  78
+/* Added by EKA*/
+#define PM_HARDENING      79 /* to PM */
+/* End added by EKA*/
 #define GETDENTS	  80	/* to VFS */
 #define LLSEEK		  81	/* to VFS */
 #define FSTATFS	 	  82	/* to VFS */
@@ -95,6 +101,8 @@
 #define FCHOWN		  96	/* to VFS */
 #define SPROF             98    /* to PM */
 #define CPROF             99    /* to PM */
+
+
 
 /* Calls provided by PM and FS that are not part of the API */
 #define PM_NEWEXEC	100	/* from VFS or RS to PM: new exec */

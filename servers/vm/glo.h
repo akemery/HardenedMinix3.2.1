@@ -36,3 +36,14 @@ EXTERN  mem_type_t mem_type_anon,       /* anonymous memory */
 
 /* total number of memory pages */
 EXTERN int total_pages;
+
+/* Added by EKA*/
+EXTERN int  vm_can_start_hardening;
+
+/** Tell the VM to allocate new frames for pram_phys, first_step_phys and 
+ ** second_step_phys**/
+#define VM_HENABLE          0x1 
+#define VM_HENABLE_PAGE_ABS 0x2
+EXTERN int hardening_enabled;
+
+/* End added by EKA*/

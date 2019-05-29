@@ -33,6 +33,13 @@
 #include "acpi.h"
 #endif
 
+/** Added by EKA**/
+#include "hproto.h"
+#include "htype.h"
+#include "mca.h"
+#include "rcounter.h"
+/** End Added by EKA**/
+
 static int osfxsr_feature; /* FXSAVE/FXRSTOR instructions support (SSEx) */
 
 /* set MP and NE flags to handle FPU exceptions in native mode. */
@@ -215,10 +222,18 @@ int restore_fpu(struct proc *pr)
 	return OK;
 }
 
+#define SUPPORT_DS 1 << 21
+
 void cpu_identify(void)
 {
 	u32_t eax, ebx, ecx, edx;
 	unsigned cpu = cpuid;
+
+        eax = 1;
+	_cpuid(&eax, &ebx, &ecx, &edx);
+        
+        printf("Support DS 0x%x\n", edx);
+        
 	
 	eax = 0;
 	_cpuid(&eax, &ebx, &ecx, &edx);
@@ -247,6 +262,7 @@ void cpu_identify(void)
 	cpu_info[cpu].stepping = eax & 0xf;
 	cpu_info[cpu].flags[0] = ecx;
 	cpu_info[cpu].flags[1] = edx;
+        
 }
 
 void arch_init(void)
@@ -580,23 +596,10 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
 
 void restore_user_context(struct proc *p)
 {
+         /*Added by EKA*/
+         start_dwc(p);
+        /* End added by EKA*/
 	int trap_style = p->p_seg.p_kern_trap_style;
-#if 0
-#define TYPES 10
-	static int restores[TYPES], n = 0;
-
-	if(trap_style >= 0 && trap_style < TYPES)
-		restores[trap_style]++;
-
-	if(!(n++ % 500000)) {
-		int t;
-		for(t = 0; t < TYPES; t++)
-			if(restores[t])
-				printf("%d: %d   ", t, restores[t]);
-		printf("\n");
-	}
-#endif
-
 	p->p_seg.p_kern_trap_style = KTS_NONE;
 
 	if(trap_style == KTS_SYSENTER) {

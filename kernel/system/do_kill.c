@@ -30,7 +30,10 @@ int do_kill(struct proc * caller, message * m_ptr)
   if (!isokendpt(proc_nr_e, &proc_nr)) return(EINVAL);
   if (sig_nr >= _NSIG) return(EINVAL);
   if (iskerneln(proc_nr)) return(EPERM);
-
+/* Added by EKA*/
+  if(h_enable && h_proc_nr == proc_nr)
+     printf("## receiving kill hahah %d %d %d###\n", h_step, h_proc_nr, sig_nr);
+/* End added by EKA*/
   /* Set pending signal to be processed by the signal manager. */
   cause_sig(proc_nr, sig_nr);
 

@@ -9,7 +9,10 @@
 #include <string.h>
 #include <assert.h>
 #include <machine/vm.h>
-
+/* Added by EKA*/
+#include "htype.h"
+#include "hproto.h"
+/* End added by EKA*/
 struct ex_s {
 	char *msg;
 	int signum;
@@ -58,10 +61,32 @@ static void pagefault( struct proc *pr,
 
 	pagefaultcr2 = read_cr2();
 
-#if 0
-	printf("kernel: pagefault in pr %d, addr 0x%lx, his cr3 0x%lx, actual cr3 0x%lx\n",
-		pr->p_endpoint, pagefaultcr2, pr->p_seg.p_cr3, read_cr3());
-#endif
+       /* Added by EKA*/
+        /** Added by EKA to support hardening**/
+        /* Modify the VM msg or NOT? */
+        int changemsg2vm = H_NO; 
+        
+        /** The page fault was already handled by check_vaddr_2
+         ** The native Minix 3 handler will just return **/
+        if(h_rw == K_HANDLE_PF)
+           return;
+
+        /** VM should handle the page fault. That is a page fault caused by the
+         ** hardening. Inform the VM. The VM will allocate a frame for US1 or 
+         ** US2 and will create data structure to handle that page in its own 
+         ** address space.
+         ** The variable h_step will be changed to allow the VM to run when 
+         ** hardening is enable. Its previous value is saved in h_step_back. 
+         ** Its new value is VM_RUN. The message to the VM will be changed too.
+         **/
+        if((h_rw == RO_PAGE_FIRST_RUN) || (h_rw == RO_PAGE_SECOND_RUN)){
+           assert(h_step_back == 0);
+           h_step_back = h_step;
+           h_step = VM_RUN; // transition step
+           changemsg2vm = H_YES; 
+        }
+       /** End by EKA to support hardening**/
+       /* End added by EKA*/
 
 	in_physcopy = (frame->eip > (vir_bytes) phys_copy) &&
 	   (frame->eip < (vir_bytes) phys_copy_fault);
@@ -117,9 +142,24 @@ static void pagefault( struct proc *pr,
 
 	/* tell Vm about the pagefault */
 	m_pagefault.m_source = pr->p_endpoint;
-	m_pagefault.m_type   = VM_PAGEFAULT;
 	m_pagefault.VPF_ADDR = pagefaultcr2;
 	m_pagefault.VPF_FLAGS = frame->errcode;
+
+         /* Added by EKA*/
+       /***Add by EKA to support hardening***/
+        if(changemsg2vm == H_NO)
+            m_pagefault.m_type   = VM_PAGEFAULT;
+        else{
+           switch(h_rw) {
+               case RO_PAGE_FIRST_RUN :   
+                  m_pagefault.m_type   = VM_HR1PAGEFAULT; break;
+               case RO_PAGE_SECOND_RUN:   
+                  m_pagefault.m_type   = VM_HR2PAGEFAULT; break;
+               default : panic("case not supported %d", h_rw);
+           }
+        }
+        /***End Add by EKA***/
+       /* End added by EKA*/
 
 	if ((err = mini_send(pr, VM_PROC_NR,
 					&m_pagefault, FROM_KERNEL))) {
@@ -188,8 +228,55 @@ void exception_handler(int is_nested, struct exception_frame * frame)
   
   ep = &ex_data[frame->vector];
 
-  if (frame->vector == 2) {		/* spurious NMI on some machines */
+  /* Added by EKA*/
+  if(h_unstable_state == H_UNSTABLE){
+       switch(frame->vector){
+            case PAGE_FAULT_VECTOR:
+                 /** It is like a bad page fault
+                  ** Put the CPU in a stable state
+                  ** Return from the exception **/
+                 halt_cpu();
+#if H_DEBUG
+                 printf("ALERT ALERT FROM EXCEPTION HANDLER !!!!! \n "
+                       "The system is in unstable state the guilty is %d %d\n"
+                       "A PAGE_FAULT OCCUR\n", 
+                       h_proc_nr, frame->vector);
+#endif
+                 break;
+            default: 
+#if H_DEBUG
+                 printf("ALERT ALERT FROM EXCEPTION HANDLER !!!!! \n "
+                       "The system is in unstable state the guilty is %d %d\n"
+                       "OTHER EXCEPTION OCCUR\n", 
+                       h_proc_nr, frame->vector);
+#endif
+                 break;
+       }
+       return;
+  }
+
+  if(h_unstable_state == H_STEPPING){
+#if H_DEBUG
+       printf("got spurious DEBUG\n");
+#endif
+       frame->eflags &= ~TRACEBIT;
+       return;
+  }
+
+  if(h_exception){
+#if H_DEBUG
+     printf("got spurious exception %d\n", frame->vector);
+#endif
+     h_exception = 0;
+     return;
+  }
+  /*End Added By EKA*/
+
+  if (frame->vector == 2) {
+#if H_DEBUG              
+		/* spurious NMI on some machines */
 	printf("got spurious NMI\n");
+#endif
 	return;
   }
 

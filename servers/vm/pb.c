@@ -94,7 +94,6 @@ struct	phys_region *pb_reference(struct phys_block *newpb,
 void pb_unreferenced(struct vir_region *region, struct phys_region *pr, int rm)
 {
 	struct phys_block *pb;
-
 	pb = pr->ph;
 	assert(pb->refcount > 0);
 	USE(pb, pb->refcount--;);
@@ -125,8 +124,19 @@ void pb_unreferenced(struct vir_region *region, struct phys_region *pr, int rm)
 
 		SLABFREE(pb);
 	}
-
+       
+        /*Added by EKA*/
+        struct vmproc *vmp = region->parent;
+        if(vmp && 
+                     (vmp->vm_hflags & VM_PROC_TO_HARD) && 
+                     (vmp->vm_endpoint != NONE) && 
+                     (vmp->vm_endpoint != VM_PROC_NR)){
+             if(free_region_pmbs(vmp, pr->offset+region->vaddr, VM_PAGE_SIZE)!=OK)
+                panic("free_region_pmbs in vm");
+        }
+        /*End added by EKA*/
 	pr->ph = NULL;
 
 	if(rm) physblock_set(region, pr->offset, NULL);
+        
 }

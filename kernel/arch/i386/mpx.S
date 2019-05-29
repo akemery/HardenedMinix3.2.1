@@ -53,6 +53,41 @@ IMPORT(params_size)
 IMPORT(params_offset)
 IMPORT(switch_to_user)
 IMPORT(multiboot_init)
+/*Added By EKA*/
+IMPORT(hardening_task)
+IMPORT(hardening_exception_handler)
+IMPORT(save_context)
+IMPORT(h_step)
+IMPORT(eax_s)
+IMPORT(ebx_s)
+IMPORT(ecx_s)
+IMPORT(edx_s)
+IMPORT(esi_s)
+IMPORT(edi_s)
+IMPORT(ebp_s)
+IMPORT(esp_s)
+
+IMPORT(eax_s1)
+IMPORT(ebx_s1)
+IMPORT(ecx_s1)
+IMPORT(edx_s1)
+IMPORT(esi_s1)
+IMPORT(edi_s1)
+IMPORT(ebp_s1)
+IMPORT(esp_s1)
+
+IMPORT(eax_s2)
+IMPORT(ebx_s2)
+IMPORT(ecx_s2)
+IMPORT(edx_s2)
+IMPORT(esi_s2)
+IMPORT(edi_s2)
+IMPORT(ebp_s2)
+IMPORT(esp_s2)
+IMPORT(origin_syscall)
+IMPORT(h_pf_handle_by_k)
+IMPORT(h_normal_pf)
+/*End added By EKA*/
 
 .text
 /*===========================================================================*/
@@ -244,7 +279,39 @@ syscall_sysenter_common:
 	pushf
 	pop	%edx
 	mov	%edx, PSWREG(%ebp)
+        /*Added by EKA*/
+        /*hardening 1st run or 2nd run*/
+        /**Save the general purpose registers*/
+	mov %eax, eax_s
+	mov %ebx, ebx_s
+	mov %ecx, ecx_s
+	mov %edx, edx_s
+	mov %esi, esi_s
+	mov %edi, edi_s
+	mov %ebp, ebp_s
+	mov %esp, esp_s
+        /**record the origin of the trap**/
+	mov $1  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
 
+        /**Test the step. 1st or 2nd and jump to the hardening handler**/
+        cmpl $1, h_step
+	jz  hardening_task_entry
+
+	/*check  hardening task second run*/
+	cmpl $2, h_step
+	jz  hardening_task_entry
+
+        /**reset the origin value**/
+	mov $0  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+        
+        /**call the Minix normal SYS_ENTER Handler**/
+
+ENTRY(cont_sys_call_entry)
+        /* End Added by EKA*/
 	/* check for call type; do_ipc? */
 	cmp	$IPCVEC_UM, %edi
 	jz	ipc_entry_common
@@ -263,10 +330,70 @@ syscall_sysenter_common:
  */
 ENTRY(ipc_entry_softint_orig)
 	SAVE_PROCESS_CTX(0, KTS_INT_ORIG)
+       /*Added by EKA*/
+       /**Save the general purpose registers*/
+	mov %ebx, ebx_s
+	mov %ecx, ecx_s
+	mov %edx, edx_s
+	mov %esi, esi_s
+	mov %edi, edi_s
+	mov %ebp, ebp_s
+	mov %esp, esp_s
+	mov %eax, eax_s
+        /**record the origin of the trap**/
+	mov $2  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+
+       /*check  hardening task first run*/
+        /**Test the step. 1st or 2nd and jump to the hardening handler**/
+	cmpl	$1, h_step
+	jz  hardening_task_entry
+
+	/*check  hardening task second run*/
+	cmpl $2, h_step
+	jz  hardening_task_entry
+
+        /**reset the origin value**/
+	mov $0  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+       /**call the Minix normal IPC_ORIGIN Handler**/
+ENTRY(cont_sys_call_entry_2)
+       /* End added by EKA*/
 	jmp ipc_entry_common
 
 ENTRY(ipc_entry_softint_um)
 	SAVE_PROCESS_CTX(0, KTS_INT_UM)
+       /*Added by EKA*/
+        mov %ebx, ebx_s
+	mov %ecx, ecx_s
+	mov %edx, edx_s
+	mov %esi, esi_s
+	mov %edi, edi_s
+	mov %ebp, ebp_s
+	mov %esp, esp_s
+	mov %eax, eax_s
+	mov $3  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+       /*check  hardening task first run*/
+        /**Test the step. 1st or 2nd and jump to the hardening handler**/
+        cmpl $1, h_step
+	jz  hardening_task_entry
+
+	/*check  hardening task second run*/
+         /**Test the step. 1st or 2nd and jump to the hardening handler**/
+	cmpl $2, h_step
+	jz  hardening_task_entry
+
+	mov $0  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+     /**call the Minix normal KTS_INT_UM Handler**/
+ENTRY(cont_sys_call_entry_3)
+        /*End added by EKA*/
+
 	jmp ipc_entry_common
 
 ENTRY(ipc_entry_common)
@@ -304,10 +431,67 @@ ENTRY(ipc_entry_common)
  */
 ENTRY(kernel_call_entry_orig)
 	SAVE_PROCESS_CTX(0, KTS_INT_ORIG)
+       /*Added by EKA*/
+        mov %ebx, ebx_s
+	mov %ecx, ecx_s
+	mov %edx, edx_s
+	mov %esi, esi_s
+	mov %edi, edi_s
+	mov %ebp, ebp_s
+	mov %esp, esp_s
+	mov %eax, eax_s
+	mov $4  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+        /*check  hardening task first run*/
+        /**Test the step. 1st or 2nd and jump to the hardening handler**/
+        cmpl $1, h_step
+	jz  hardening_task_entry
+
+	/*check  hardening task second run*/
+         /**Test the step. 1st or 2nd and jump to the hardening handler**/
+	cmpl $2, h_step
+	jz  hardening_task_entry
+
+	mov $0  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+    /**call the Minix normal KTS_INT_ORIG Handler**/
+ENTRY(cont_sys_call_entry_4)
+        /*End added by EKA*/
 	jmp	kernel_call_entry_common
 
 ENTRY(kernel_call_entry_um)
 	SAVE_PROCESS_CTX(0, KTS_INT_UM)
+/*Added by EKA*/
+        mov %ebx, ebx_s
+	mov %ecx, ecx_s
+	mov %edx, edx_s
+	mov %esi, esi_s
+	mov %edi, edi_s
+	mov %ebp, ebp_s
+	mov %esp, esp_s
+	mov %eax, eax_s
+	mov $5  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+        /*check  hardening task first run*/
+        /**Test the step. 1st or 2nd and jump to the hardening handler**/
+        cmpl $1, h_step
+	jz  hardening_task_entry
+
+	/*check  hardening task second run*/
+         /**Test the step. 1st or 2nd and jump to the hardening handler**/
+	cmpl $2, h_step
+	jz  hardening_task_entry
+
+	mov $0  ,   %eax
+	mov %eax, origin_syscall
+	mov eax_s, %eax
+    /**call the Minix normal KTS_INT_UM Handler**/
+ENTRY(cont_sys_call_entry_5)
+        /*End added by EKA*/
+
 	jmp	kernel_call_entry_common
 
 ENTRY(kernel_call_entry_common)
@@ -335,6 +519,60 @@ ENTRY(kernel_call_entry_common)
 
 	jmp	_C_LABEL(switch_to_user)
 
+/*Added by EKA*/
+/** Call the hardening task**/
+ENTRY(hardening_task_entry)
+     call _C_LABEL(hardening_task)
+/** Restore the resgisters and continue to the normal execption handlers**/
+ENTRY(hardening_task_2_entry)
+     movl eax_s, %eax
+     movl ebx_s, %ebx
+     movl ecx_s, %ecx
+     movl edx_s, %edx
+     movl esi_s, %esi
+     movl edi_s, %edi
+     movl ebp_s, %ebp
+     movl esp_s, %esp
+
+     cmpl $2, origin_syscall
+     jz cont_sys_call_entry_2
+
+     cmpl $3, origin_syscall
+     jz cont_sys_call_entry_3
+
+     cmpl $4, origin_syscall
+     jz cont_sys_call_entry_4
+
+     cmpl $5, origin_syscall
+     jz cont_sys_call_entry_5
+
+     jmp cont_sys_call_entry
+
+/** An exception occur. Verify the nature of the exception
+ ** - If it is a normal PF let the VM handle it
+ ** - If it is a hardened PF let the kernel handle it**/
+
+ENTRY(hardening_exception_entry)
+     push	%esp  /* push the frame pointer to the stack*/
+     /* call the hardening exception handler*/
+     call _C_LABEL(hardening_exception_handler) 
+     add	$4, %esp
+     /* It is normal page fault or retirement counter exception overflow
+      * go to hardening_exception_task_entry
+      * hardening_exception_handler had set h_stop_pe = 1  */
+     cmpl $1, h_stop_pe 
+     /* The kernel should handle the PF*/
+     jz  hardening_exception_task_entry
+     /* continue to the normal exception handling*/
+     jmp cont_exception_handling 
+
+     /* call the hardening task with handle hardening activities */
+ENTRY(hardening_exception_task_entry)
+     call _C_LABEL(hardening_task) 
+     /* go to the normal exception handling */
+     jmp cont_exception_handling 
+
+/*End added by EKA*/
 
 .balign 16
 /*
@@ -351,7 +589,43 @@ exception_entry:
 	TEST_INT_IN_KERNEL(12, exception_entry_nested)
 
 exception_entry_from_user:
+/*Added by EKA*/
+        /* added by EKA check  hardening task first or second run*/
+	cmpl $1, h_step
+        jz save_reg_1
+        cmpl $2, h_step
+        jz save_reg_2
+       
+ENTRY(save_ctx_1)
+        /*End added by EKA*/
 	SAVE_PROCESS_CTX(8, KTS_INT_HARD)
+       /*Added by EKA*/
+        /* remember where interrupt come from*/
+        mov $6  ,   %eax
+	mov %eax, origin_syscall 
+        /* save the esp that contains the frame pointer*/
+        mov %esp, esp_s  
+        /* save the ebp that points to the proc struct*/
+        mov %ebp, ebp_s  
+        /* handle the page fault in hardening manner if it is 1st run*/
+        /*check  hardening task first run*/
+        cmpl $1, h_step   
+	jz  hardening_exception_entry
+	/* handle the page fault in hardening manner if it is 2nd run*/
+        /*check  hardening task second run*/
+	cmpl $2, h_step 
+	jz  hardening_exception_entry
+        /*Stepping first run*/
+        cmpl $4, h_step 
+	jz  hardening_exception_entry
+        
+ENTRY(cont_exception_handling) 
+        /* continue the normal exception handling 
+         * restore esp and ebp */
+        movl esp_s, %esp
+        movl ebp_s, %ebp
+/** end EKA addition**/
+        /*End added by EKA*/
 
 	/* stop user process cycles */
 	push	%ebp
@@ -446,6 +720,33 @@ ENTRY(restore_user_context_int)
 
 	iret	/* continue process */
 
+/*Added by EKA*/
+ENTRY(save_reg_1)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s1
+	mov %ebx, ebx_s1
+	mov %ecx, ecx_s1
+	mov %edx, edx_s1
+	mov %esi, esi_s1
+	mov %edi, edi_s1
+	mov %ebp, ebp_s1
+	mov %esp, esp_s1
+        jmp save_ctx_1
+
+ENTRY(save_reg_2)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s2
+	mov %ebx, ebx_s2
+	mov %ecx, ecx_s2
+	mov %edx, edx_s2
+	mov %esi, esi_s2
+	mov %edi, edi_s2
+	mov %ebp, ebp_s2
+	mov %esp, esp_s2
+        jmp save_ctx_1
+/*End added by EKA*/
+
+
 /*===========================================================================*/
 /*				exception handlers			     */
 /*===========================================================================*/
@@ -464,7 +765,13 @@ LABEL(divide_error)
 LABEL(single_step_exception)
 	EXCEPTION_NO_ERR_CODE(DEBUG_VECTOR)
 
+/*Added by EKA*/
 LABEL(nmi)
+	EXCEPTION_NO_ERR_CODE(NMI_VECTOR)
+
+
+LABEL(nmi_2)
+/*End added by EKA*/
 #ifndef USE_WATCHDOG
 	EXCEPTION_NO_ERR_CODE(NMI_VECTOR)
 #else

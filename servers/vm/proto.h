@@ -203,3 +203,25 @@ void phys_setphys(struct vir_region *vr, phys_bytes startaddr);
 
 /* mem_shared.c */
 void shared_setsource(struct vir_region *vr, endpoint_t ep, struct vir_region *src);
+
+/* Added by EKA*/
+/*cow.c*/
+/*cow.c*/
+struct pram_mem_block *get_pmb(void);
+int do_memconf(message *m);
+struct pram_mem_block * look_up_pte(struct vmproc *current_p, int pde, int pte);
+void display_mem(struct vmproc *current_p);
+void do_hpagefaults(message *m);
+void free_pram_mem_blocks(struct vmproc *current_p);
+struct pram_mem_block *get_pmb(void);
+void allocate_mem_4_hardening (struct vmproc *vmp, 
+          struct vir_region *region, struct phys_region *ph, int what );
+struct pram_mem_block * add_pmb(struct vmproc *vmp,  vir_bytes v,
+   phys_bytes pfa, phys_bytes us1, phys_bytes us2);
+int free_region_pmbs(struct vmproc *vmp, vir_bytes raddr, vir_bytes length);
+void do_hardening(message *m);
+
+/*us1us2h.c*/
+int tell_kernel_for_us1_us2(struct vmproc *vmp, 
+     vir_bytes v, phys_bytes physaddr, size_t bytes );
+/* End added by EKA*/

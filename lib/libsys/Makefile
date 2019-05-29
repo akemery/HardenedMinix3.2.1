@@ -74,6 +74,10 @@ SRCS+=  \
 	sys_vsafecopy.c \
 	sys_vtimer.c \
 	sys_vumap.c \
+        sys_hmem_map.c \
+        sys_hardening.c \
+        sys_free_pmbs.c \
+        sys_addregionto_ws.c \
 	taskcall.c \
 	tickdelay.c \
 	timers.c \

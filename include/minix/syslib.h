@@ -245,5 +245,19 @@ int sys_setmcontext(endpoint_t proc, mcontext_t *mcp);
 /* input */
 int tty_input_inject(int type, int code, int val);
 
+
+/* Added by EKA*/
+/**cow**/
+
+int sys_cowreply(endpoint_t proc_ep);
+int sys_hmem_map(endpoint_t proc_endpt, phys_bytes first_phys, 
+	phys_bytes second_phys, phys_bytes pram2_phys, int r_id);
+int sys_hardening(endpoint_t proc_endpt, int htask_type, 
+	endpoint_t htask_pendt, char *htask_pname, int namelen);
+int sys_addregionto_ws(endpoint_t proc_endpt, vir_bytes raddr, 
+                    int rlength, phys_bytes us1, phys_bytes us2);
+int sys_free_pmbs(endpoint_t proc_endpt, vir_bytes raddr, int rlength );
+/*End added by EKA*/
+
 #endif /* _SYSLIB_H */
 

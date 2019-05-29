@@ -437,6 +437,11 @@ extern	 int optreset;		/* getopt(3) external variable */
 extern	 char *suboptarg;	/* getsubopt(3) external variable */
 #endif
 
+/* Added by EKA*/
+int enable_hardening(void);
+int disable_hardening(void);
+int hardening(int type, pid_t pid, char *name, int namelen);
+/* Added by EKA*/
 __END_DECLS
 
 #ifdef __minix

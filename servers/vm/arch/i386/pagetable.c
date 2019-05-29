@@ -750,6 +750,7 @@ int pt_ptmap(struct vmproc *src_vmp, struct vmproc *dst_vmp)
 	phys_bytes physaddr;
 	vir_bytes viraddr;
 	pt_t *pt;
+  
 
 	pt = &src_vmp->vm_pt;
 
@@ -802,6 +803,7 @@ int pt_ptmap(struct vmproc *src_vmp, struct vmproc *dst_vmp)
 		}
 	}
 
+       
 	return OK;
 }
 
@@ -853,7 +855,10 @@ int pt_writemap(struct vmproc * vmp,
 	assert(!(flags & ~(PTF_ALLFLAGS)));
 
 	pages = bytes / VM_PAGE_SIZE;
-
+        /*Added by EKA: To be sent to kernel*/
+         vir_bytes vi = v;
+         phys_bytes physaddri = physaddr;
+        /* End added by EKA*/
 	/* MAP_NONE means to clear the mapping. It doesn't matter
 	 * what's actually written into the PTE if PRESENT
 	 * isn't on, so we can just write MAP_NONE into it.
@@ -979,7 +984,16 @@ resume_exit:
 		sys_vmctl(vmp->vm_endpoint, VMCTL_VMINHIBIT_CLEAR, 0);
 	}
 #endif
-
+/* Added by EKA*/
+   if((flags & ARCH_VM_PTE_RW) && vmp && 
+        (vmp->vm_hflags & VM_PROC_TO_HARD) && 
+        (vmp->vm_endpoint != NONE) && 
+        (vmp->vm_endpoint != VM_PROC_NR))
+     if(tell_kernel_for_us1_us2(vmp, vi, 
+        physaddri, bytes)!=OK)
+        panic("pt_writemap: tell_kernel_for"
+              "_us1_us2 failed\n");
+/*End added by EKA*/
 	return ret;
 }
 

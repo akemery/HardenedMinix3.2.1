@@ -10,7 +10,8 @@
 #include "kernel/system.h"
 #include <string.h>
 #include <minix/endpoint.h>
-
+#include "kernel/arch/i386/hproto.h"
+#include "kernel/arch/i386/htype.h"
 #if USE_EXEC
 
 /*===========================================================================*
@@ -31,6 +32,13 @@ int do_exec(struct proc * caller, message * m_ptr)
   if(rp->p_misc_flags & MF_DELIVERMSG) {
 	rp->p_misc_flags &= ~MF_DELIVERMSG;
   }
+
+   /** Add by EKA: free the PE working set list ***/
+    if(rp->p_hflags & PROC_TO_HARD){
+      free_pram_mem_blocks(rp,FROM_EXEC);
+      //set_exec_label(rp);
+    }
+  /**End Add by EKA**/
 
   /* Save command name for debugging, ps(1) output, etc. */
   if(data_copy(caller->p_endpoint, (vir_bytes) m_ptr->PR_NAME_PTR,

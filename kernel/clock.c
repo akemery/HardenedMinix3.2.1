@@ -39,6 +39,11 @@
 #include "watchdog.h"
 #endif
 
+/** Add by EKA to include hardening meta data**/
+#include "arch/i386/htype.h"
+#include "arch/i386/hproto.h"
+
+/** End by EKA **/
 /* Function prototype for PRIVATE functions.
  */ 
 static void load_update(void);
@@ -96,6 +101,7 @@ int timer_int_handler(void)
 	billp = get_cpulocal_var(bill_ptr);
 
 	p->p_user_time++;
+        p->p_ticks++;
 
 	if (! (priv(p)->s_flags & BILLABLE)) {
 		billp->p_sys_time++;
@@ -145,7 +151,28 @@ int timer_int_handler(void)
 #endif
 
 	}
-
+/** Added by EKA**/
+#if INJECT_FAULT
+         /***Can I enable injection?**/
+        if(could_inject == H_NO){
+          if((id_current_pe - id_last_inject_in_gpreg) >= H_TO_INJECT_IN_GP){
+              could_inject = H_YES;
+              id_last_inject_in_gpreg = id_current_pe;
+          }
+          if((id_current_pe - id_last_inject_in_crreg) >= H_TO_INJECT_IN_CR){
+              could_inject = H_YES;
+              id_last_inject_in_crreg = id_current_pe;    
+          }
+          if(id_current_pe >= H_THRESHOLD_PE){
+                /**To avoid integer overflow***/
+                id_last_inject_in_gpreg = 0; 
+                id_last_inject_in_crreg  = 0;
+                id_current_pe = 0;
+          }
+        }
+        
+#endif
+/** end Added by EKA**/
 	arch_timer_int_handler();
 
 	return(1);					/* reenable interrupts */

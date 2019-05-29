@@ -126,6 +126,35 @@ struct proc {
    */
   struct { reg_t r1, r2, r3; } p_defer;
 
+    /*Add to extend the capacity of process to support hardening task*/
+  struct pram_mem_block *p_lus1_us2; /*working set list*/
+  /**number of pages in the working set during first run**/
+  int p_lus1_us2_size; 
+  int p_workingset_size;
+  /**the hardening flags**/
+  int p_hflags; 
+
+  u64_t p_remaining_ins; /*remain instructions*/
+  u32_t p_ins_first;
+  u32_t p_ins_secnd;
+  u64_t p_ins_last;
+  int p_start_count_ins; /**flags to start counting instruction**/
+
+ /** List to store hardening event such as modification of US0 frames
+  ** during message copy, data copy and shared frame modfication **/
+  struct hardening_mem_event *p_hardening_mem_events;
+  int p_nb_hardening_mem_events;
+
+ /*** hardening shared region data structures**/
+  struct hardening_shared_region *p_hardening_shared_regions;
+  int p_nb_hardening_shared_regions;
+  int p_setcow;
+  int p_ticks;
+  int p_nb_nmi;
+  int p_nb_pe;
+  int p_nb_abort;
+  int p_nb_ss;
+
 #if DEBUG_TRACE
   int p_schedules;
 #endif
@@ -159,6 +188,11 @@ struct proc {
 				   should be enqueued at the end of some run
 				   queue again */
 #define RTS_BOOTINHIBIT	0x10000	/* not ready until VM has made it */
+
+/** Added by EKA**/
+#define RTS_UNSTABLE_STATE 0x20000
+#define RTS_INS_COUNTER 0x20000  /**retirement counter interrrupt occur**/
+/** End added by EKA**/
 
 /* A process is runnable iff p_rts_flags == 0. */
 #define rts_f_is_runnable(flg)	((flg) == 0)
@@ -278,6 +312,7 @@ EXTERN struct proc proc[NR_TASKS + NR_PROCS];	/* process table */
 int mini_send(struct proc *caller_ptr, endpoint_t dst_e, message *m_ptr,
 	int flags);
 
+EXTERN int hc_proc_nr[10];
 #endif /* __ASSEMBLY__ */
 
 #endif /* PROC_H */

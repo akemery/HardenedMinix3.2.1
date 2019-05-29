@@ -18,7 +18,11 @@
 #include "kernel/kernel.h"
 #include "archconst.h"
 #include "hw_intr.h"
+/** Add by EKA to include hardening meta data**/
+#include "arch/i386/htype.h"
+#include "arch/i386/hproto.h"
 
+/** End by EKA **/
 
 /* number of lists of IRQ hooks, one list per supported line. */
 static irq_hook_t* irq_handlers[NR_IRQ_VECTORS] = {0};
@@ -117,7 +121,13 @@ void rm_irq_handler( const irq_hook_t* hook ) {
 void irq_handle(int irq)
 {
   irq_hook_t * hook;
-
+ /*Added by EKA*/
+  if(h_unstable_state == H_UNSTABLE){
+       printf("ALERT ALERT FROM IRQ HANDLE !!!!! \n "
+              "The system is in unstable state The guilty is %d %d\n", 
+              h_proc_nr, irq);
+  }
+  /*End Added by EKA*/
   /* here we need not to get this IRQ until all the handlers had a say */
   assert(irq >= 0 && irq < NR_IRQ_VECTORS);
   hw_intr_mask(irq);

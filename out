@@ -1,0 +1,33 @@
+./commands/time/time.c:  read_tsc_64(&start_tsc);
+./commands/time/time.c:  read_tsc_64(&end_tsc);
+./include/minix/minlib.h:void read_tsc_64(u64_t *t);
+./include/timers.h:	read_tsc_64(&_starttime);				\
+./include/timers.h:	read_tsc_64(&_endtime);					\
+./kernel/proc.c:  read_tsc_64(&(get_cpulocal_var(proc_ptr)->p_accounting.enter_queue));
+./kernel/proc.c:  read_tsc_64(&(get_cpulocal_var(proc_ptr->p_accounting.enter_queue)));
+./kernel/proc.c:	read_tsc_64(&tsc);
+./kernel/arch/i386/apic.c:	read_tsc_64(&tsc);
+./kernel/arch/i386/arch_clock.c:	read_tsc_64(&tsc);
+./kernel/arch/i386/arch_clock.c:	read_tsc_64(get_cpu_var_ptr(cpu, tsc_ctr_switch));
+./kernel/arch/i386/arch_clock.c:		read_tsc_64(&tsc);
+./kernel/arch/i386/arch_clock.c:		read_tsc_64(&bkl_tsc);
+./kernel/arch/i386/arch_clock.c:		read_tsc_64(&tsc);
+./kernel/arch/i386/arch_clock.c:	read_tsc_64(&tsc);
+./kernel/arch/i386/arch_clock.c:	read_tsc_64(&current_tsc);
+./kernel/arch/i386/arch_clock.c:	read_tsc_64(&tsc0);
+./kernel/arch/i386/arch_clock.c:	do { read_tsc_64(&tsc); } while(tsc < tsc1);
+./kernel/arch/earm/omap_timer.c:void read_tsc_64(u64_t *t)
+./kernel/arch/earm/arch_clock.c:	read_tsc_64(get_cpu_var_ptr(cpu, tsc_ctr_switch));
+./kernel/arch/earm/arch_clock.c:	read_tsc_64(&tsc);
+./lib/libminlib/read_tsc_64.c:void read_tsc_64(t)
+./lib/libc/minix/minix-malloc-debug.c:  /* read_tsc_64(&tsc); */
+./lib/libblockdriver/trace.c:  read_tsc_64(&tsc);
+./lib/libblockdriver/trace.c:		read_tsc_64(&trace_tsc);
+./lib/libsys/arch/i386/spin.c:		read_tsc_64(&s->s_base_tsc);
+./lib/libsys/arch/i386/spin.c:		read_tsc_64(&cur_tsc);
+./lib/libsys/arch/i386/getidle.c:	read_tsc_64(&start);
+./lib/libsys/arch/i386/getidle.c:	read_tsc_64(&stop);
+./lib/libsys/arch/i386/tsc_util.c:	read_tsc_64(&now);
+./lib/libsys/arch/i386/tsc_util.c:		read_tsc_64(&now);
+./lib/libsys/arch/i386/profile.c:  read_tsc_64(&start);
+./lib/libsys/arch/i386/profile.c:  read_tsc_64(&cprof_stk[cprof_stk_top].start_2);

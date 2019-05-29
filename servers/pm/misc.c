@@ -30,6 +30,12 @@
 #include "param.h"
 #include "kernel/proc.h"
 
+/* Added by EKA*/
+#include <string.h>
+#include <stdlib.h>
+#include <minix/u64.h>
+/* End added by EKA*/
+
 struct utsname uts_val = {
   "Minix",		/* system name */
   "noname",		/* node/network name */
@@ -495,3 +501,56 @@ char *brk_addr;
 	_brksize = brk_addr;
 	return 0;
 }
+
+/* Added by EKA*/
+/*===========================================================================*
+ *				do_enable_hardening				     *
+ *===========================================================================*/
+int do_enable_hardening(void){
+    sys_hardening(PM_PROC_NR, HTASK_EN_HARDENING_ALL_F, 0, NULL,0);
+    return(OK);
+}
+
+/*===========================================================================*
+ *				do_disable_hardening				     *
+ *===========================================================================*/
+int do_disable_hardening(void){
+    sys_hardening(PM_PROC_NR, HTASK_DIS_HARDENING_ALL_F, 0, NULL,0);
+    return(OK);
+}
+/*===========================================================================*
+ *				do_hardening				     *
+ *===========================================================================*/
+/* do_hardening: 
+ * path src/minix/servers/pm/misc.c*/
+int do_hardening(void){
+
+    char *pname;     
+    switch(m_in.HTASK_TYPE){
+     case HTASK_EN_HARDENING_ALL_F:
+          sys_hardening(PM_PROC_NR, 
+              HTASK_EN_HARDENING_ALL_F , 0, NULL,0);
+          break;
+     
+     case HTASK_DIS_HARDENING_ALL_F:
+          sys_hardening(PM_PROC_NR, 
+              HTASK_DIS_HARDENING_ALL_F , 0, NULL,0);
+          break;
+     case HTASK_EN_HARDENING_PID:
+          sys_hardening(PM_PROC_NR, 
+               HTASK_EN_HARDENING_PID, 
+               m_in.HTASK_P_ENDPT, NULL,0);
+          break;
+     case HTASK_DIS_HARDENING_PID:
+          sys_hardening(PM_PROC_NR, 
+                        HTASK_DIS_HARDENING_PID, 
+                        m_in.HTASK_P_ENDPT, NULL,0);
+     case HTASK_DISPLAY_HARDENIG:
+           sys_hardening(PM_PROC_NR, 
+              HTASK_DISPLAY_HARDENIG , 0, NULL,0);
+          break;
+  }
+  return(OK);
+}
+
+/* End added by EKA*/

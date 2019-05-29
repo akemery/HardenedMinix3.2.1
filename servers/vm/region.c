@@ -30,6 +30,10 @@
 #include "memlist.h"
 #include "memtype.h"
 
+/* Added by EKA*/
+#include "htype.h"
+/* End added by EKA*/
+
 /* LRU list. */
 static yielded_t *lru_youngest = NULL, *lru_oldest = NULL;
 
@@ -606,6 +610,19 @@ mem_type_t *memtype;
 #endif
 
 	SANITYCHECK(SCL_FUNCTIONS);
+       /** Added by EKA***/
+         /** Added by EKA***/
+        if(newregion->memtype == &mem_type_shared){
+           printf("A shared memory 0x%lx 0x%lx\n",newregion->vaddr, 
+                   newregion->length);
+           if(sys_hmem_map(vmp->vm_endpoint, newregion->vaddr,
+                        newregion->length, -10L, newregion->id )!=OK)
+              panic("map_page_region: sys_hmem_map failed\n");
+        }
+        /** End Added by EKA***/
+
+        /** End Added by EKA***/
+
 
 	return newregion;
 }
@@ -638,7 +655,7 @@ static int map_subfree(struct vir_region *region,
 		}
 	}
 #endif
-
+        
 	for(voffset = start; voffset < end; voffset+=VM_PAGE_SIZE) {
 		if(!(pr = physblock_get(region, voffset)))
 			continue;
@@ -646,8 +663,20 @@ static int map_subfree(struct vir_region *region,
 		assert(pr->offset < end);
 		pb_unreferenced(region, pr, 1);
 		SLABFREE(pr);
+                
 	}
-
+        /* Added by EKA to release the corresponding part
+    * in us1_us2 list*/
+#if 0
+   struct vmproc *vmp = region->parent;
+   if(vmp && 
+        (vmp->vm_hflags & VM_PROC_TO_HARD) && 
+           (vmp->vm_endpoint != NONE) && 
+           (vmp->vm_endpoint != VM_PROC_NR))
+        if(free_region_pmbs(vmp, start+region->vaddr, len)!=OK)
+              panic("free_region_pmbs in vm");
+#endif
+   /* End added by EKA*/
 	return OK;
 }
 
@@ -1220,7 +1249,10 @@ struct vmproc *src;
 {
 /* Copy all the memory regions from the src process to the dst process. */
 	region_init(&dst->vm_regions_avl);
-
+         /*** Added by EKA ***/
+        //dst->vm_first_step_workingset_id = 0;
+        //free_pram_mem_blocks(src);
+        /*** End Added by EKA ***/
 	return map_proc_copy_from(dst, src, NULL);
 }
 

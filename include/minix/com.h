@@ -352,8 +352,19 @@
 
 #  define SYS_SAFEMEMSET (KERNEL_CALL + 56)	/* sys_safememset() */
 
+/* Added by EKA*/
+
+#  define SYS_HMEM_MAP (KERNEL_CALL + 57)       /* sys_hmem_map() */
+
+#define SYS_HARDENING (KERNEL_CALL + 58)      /* sys_hardening() */
+
+#define SYS_FREEPMBS (KERNEL_CALL + 59)      /* sys_free_pmbs() */
+
+#define SYS_ADDREGIONTOWS (KERNEL_CALL + 60)      /* sys_addregionto_ws() */
+/* End added by EKA*/
+
 /* Total */
-#define NR_SYS_CALLS	57	/* number of kernel calls */
+#define NR_SYS_CALLS	61	/* number of kernel calls */
 
 #define SYS_CALL_MASK_SIZE BITMAP_CHUNKS(NR_SYS_CALLS)
 
@@ -1074,8 +1085,25 @@
 
 #define VMPPARAM_CLEAR		1	/* values for VMPCTL_PARAM */
 
+/* Added by EKA*/
+/**HMSG from kernel to VM**/
+#define VM_HR1PAGEFAULT		(VM_RQ_BASE+0x49)
+#define VM_HR2PAGEFAULT		(VM_RQ_BASE+0x50)
+#define VM_TELL_VM_H_ENABLE	(VM_RQ_BASE+0x51)
+#define VM_TELL_VM_H_DISABLE	(VM_RQ_BASE+0x52)
+#define VM_TELL_VM_H_ENABLE_P   (VM_RQ_BASE+0x53)
+#define VM_TELL_VM_H_DISABLE_P  (VM_RQ_BASE+0x54)
+#define VPF_HADDR		m1_i1
+#define VPF_HFLAGS	        m1_i2
+
+/**HMSG from kernel to VM to conf mem for 2nd run**/
+#define VM_HCONFMEM		(VM_RQ_BASE+0x55)
+
+
+/* End Added by EKA*/
+
 /* Total. */
-#define NR_VM_CALLS				46
+#define NR_VM_CALLS				53
 #define VM_CALL_MASK_SIZE			BITMAP_CHUNKS(NR_VM_CALLS)
 
 /* not handled as a normal VM call, thus at the end of the reserved rage */
@@ -1279,5 +1307,48 @@
 /* Bits in 'BDEV_FLAGS' field of block device transfer requests. */
 #  define BDEV_NOFLAGS		0x00	/* no flags are set */
 #  define BDEV_FORCEWRITE	0x01	/* force write to disk immediately */
+
+/* Added by EKA*/
+/* Field names for _HMEM_MAP */
+#define HMEM_MAP_ENDPT	        m10_i4	/* process endpoint */
+#define HMEM_MAP_FIRST_ADDR	m10_l1	/* first run frame phys addr */
+#define HMEM_MAP_SECOND_ADDR	m10_l2	/* second run frame phys addr */
+#define HMEM_MAP_PRAM2_ADDR	m10_l3	/* back frame phys addr */
+#define HMEM_R_ID               m10_i3
+#define H_NPROCS_TO_START_H    0x10800
+
+/** Field names for SYS_HARDENING**/
+#define HTASK_TYPE              m10_i1
+#define HTASK_P_ENDPT           m10_i2
+#define HTASK_ENDPT             m10_i3
+#define HTASK_PNAME_LEN         m10_i4
+#define HTASK_PNAME             m10_l1
+
+#define HTASK_EN_HARDENING_ALL_F     0x1 
+#define HTASK_DIS_HARDENING_ALL_F    0x2
+#define HTASK_EN_HARDENING_PID       0x4
+#define HTASK_DIS_HARDENING_PID      0x8
+#define HTASK_EN_HARDENING_PNAME    0x10
+#define HTASK_DIS_HARDENING_PNAME   0x20
+#define HTASK_DISPLAY_HARDENIG      0x40
+
+#define H_DEBUG                        0
+#define H_DEBUG_2                      0
+#define H_DEBUG_3                      0
+
+#define HADDREGIONTOWS_ENDPT	        m10_i4	/* process endpoint */
+#define HADDREGIONTOWS_RLENGTH	        m10_i3	/* region length */
+#define HADDREGIONTOWS_RADDR	        m10_l1	/* region addr */
+#define HADDREGIONTOWS_US1              m10_l2  /* page US1 */
+#define HADDREGIONTOWS_US2              m10_l3  /* page US2 */
+
+/** Field names for SYS_FREEPMBS**/
+#define FREE_PMBS_ENDPT           m10_i1
+#define FREE_PMBS_REGION_LEN      m10_i2
+#define FREE_PMBS_REGION_ADDR     m10_l1
+
+#define ENABLE_HARDENING  1
+#define DISABLE_HARDENING 0
+/* End added by EKA*/
 
 /* _MINIX_COM_H */

@@ -28,6 +28,14 @@
 #include "proto.h"
 #include "util.h"
 #include "region.h"
+/* Added by EKA*/
+#include "htype.h"
+/* End added by EKA*/
+
+/* Added by EKA*/
+static int hmap_pf(struct vmproc *vmp, struct vir_region *region,
+                   vir_bytes offset, int write, u32_t addr, int rw, int what);
+/* End added by EKA*/
 
 /*===========================================================================*
  *				pf_errstr	     		     	*
@@ -199,4 +207,3 @@ int handle_memory(struct vmproc *vmp, vir_bytes mem, vir_bytes len, int wrflag)
 
 	return OK;
 }
-

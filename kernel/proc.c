@@ -40,7 +40,13 @@
 #include "clock.h"
 #include "spinlock.h"
 #include "arch_proto.h"
-
+/** Add by EKA to include hardening meta data**/
+#include "arch/i386/htype.h"
+#include "arch/i386/hproto.h"
+/** Hardening process picker **/
+static struct proc * hpick_proc(void);
+static void print_rdyqueue(void);
+/** End by EKA **/
 #include <minix/syslib.h>
 
 /* Scheduling and message passing functions */
@@ -117,7 +123,8 @@ void proc_init(void)
 	struct priv *sp;
 	int i;
 
-	/* Clear the process table. Anounce each slot as empty and set up
+        
+	/* Clear the process table. Announce each slot as empty and set up
 	 * mappings for proc_addr() and proc_nr() macros. Do the same for the
 	 * table with privilege structures for the system processes. 
 	 */
@@ -129,7 +136,10 @@ void proc_init(void)
 		rp->p_scheduler = NULL;		/* no user space scheduler */
 		rp->p_priority = 0;		/* no priority */
 		rp->p_quantum_size_ms = 0;	/* no quantum size */
-
+                /*added by EKA*/
+                rp->p_hflags = 0;
+                rp->p_setcow = 0;
+                /*end added by EKA*/
 		/* arch-specific initialization */
 		arch_proc_reset(rp);
 	}
@@ -140,7 +150,6 @@ void proc_init(void)
 		sp->s_sig_mgr = NONE;		/* clear signal managers */
 		sp->s_bak_sig_mgr = NONE;
 	}
-
 	idle_priv.s_flags = IDL_F;
 	/* initialize IDLE structures for every CPU */
 	for (i = 0; i < CONFIG_MAX_CPUS; i++) {
@@ -151,6 +160,7 @@ void proc_init(void)
 		ip->p_rts_flags |= RTS_PROC_STOP;
 		set_idle_name(ip->p_name, i);
 	}
+        init_hardening();
 }
 
 static void switch_address_space_idle(void)
@@ -394,6 +404,27 @@ check_misc_flags:
 #endif
 	
 	restart_local_timer();
+
+         /* Added by EKA */
+         /** The system is in an unstable stable. We already check what goes
+         ** wrong in the micro-kernel and in the CPU. It's now time to 
+         ** run the PE again **/
+       if(h_unstable_state == H_UNSTABLE){
+#if H_DEBUG
+              /** Just to know where we are**/
+              printf("ALERT ALERT FROM SWITCH TO USER !!!!! \n "
+              "The system is in unstable state the guilty is %d\n", 
+              h_proc_nr);
+#endif
+              /** set the unstable state to in correction**/
+              h_unstable_state = H_INCORRECTION;
+              /**get the ptr on the PE process**/
+              p = proc_addr(h_proc_nr);
+              /**launch the PE **/
+              run_proc_2(p);
+       }
+
+       /**End added by EKA**/
 	
 	/*
 	 * restore_user_context() carries out the actual mode switch from kernel
@@ -530,6 +561,17 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
 {
   struct proc *const caller_ptr = get_cpulocal_var(proc_ptr);	/* get pointer to caller */
   int call_nr = (int) r1;
+
+  /*** Added by EKA ***/
+  if(h_unstable_state == H_UNSTABLE){
+      /** The system is an unstable state do not handle the IPC**/
+      printf("ALERT ALERT FROM DO IPC !!!!! \n"
+              "The system is in unstable state The guilty is %d %d %d\n", 
+             h_proc_nr, call_nr, caller_ptr->p_nr );
+      //halt_cpu();
+      return(OK);
+  }
+  /*** End added by EKA ***/
 
   assert(!RTS_ISSET(caller_ptr, RTS_SLOT_FREE));
 
@@ -1697,6 +1739,23 @@ void dequeue(struct proc *rp)
 #endif
 }
 
+/*Added by EKA*/
+static void print_rdyqueue(void){
+  int q;
+  register struct proc *rp;			
+  struct proc **rdy_head;
+  rdy_head = get_cpulocal_var(run_q_head);
+  printf("#### PRINTING READY QUEUE ######\n\n");
+  for (q=0; q < NR_SCHED_QUEUES; q++) { 
+     if(!(rp = rdy_head[q])) 
+       continue; 
+     printf("h_enable %d queue %d proc %d name %s hproc %d\n"
+                     ,h_enable, q, rp->p_nr, rp->p_name, h_proc_nr);
+  }
+  return;
+}
+/* End added by EKA*/
+
 /*===========================================================================*
  *				pick_proc				     * 
  *===========================================================================*/
@@ -1716,6 +1775,10 @@ static struct proc * pick_proc(void)
    * queues is defined in proc.h, and priorities are set in the task table.
    * If there are no processes ready to run, return NULL.
    */
+   /*Added by EKA*/
+  /**Can we resume the PE?**/
+  if((rp = hpick_proc())) return(rp);
+  /*End added by EKA*/
   rdy_head = get_cpulocal_var(run_q_head);
   for (q=0; q < NR_SCHED_QUEUES; q++) {	
 	if(!(rp = rdy_head[q])) {
@@ -1815,8 +1878,8 @@ static void notify_scheduler(struct proc *p)
 void proc_no_time(struct proc * p)
 {
 	if (!proc_kernel_scheduler(p) && priv(p)->s_flags & PREEMPTIBLE) {
-		/* this dequeues the process */
-		notify_scheduler(p);
+           /* this dequeues the process */
+           notify_scheduler(p);
 	}
 	else {
 		/*
@@ -1888,3 +1951,132 @@ void release_fpu(struct proc * p) {
 	if (*fpu_owner_ptr == p)
 		*fpu_owner_ptr = NULL;
 }
+#define GIVE_QUANTUM 0
+
+/*Added by EKA*/
+/*===========================================================================*
+ *				hpick_proc				     *
+ *===========================================================================*/
+static struct proc * hpick_proc(void){
+  
+  /* This function is called when a new process should be chosen to run
+   * In hardened MINIX3, if this function is called while a hardened PE was
+   * running (h_enable is true). 
+   *  1 - The VM will be returned if the hardened process does a page fault and 
+   *      the pagefault flags is set.
+   *  2-  The hardened process will be chosen it is is runnable
+   *      2-1- If the hardened process doesn't have enough quantum, 
+   *            it is given a CPU time
+   *      2-2- If the hardened process was stopped by retirement counter, 
+   *          The flags is reset 
+   *  3- In all others cases a panic is triggered
+   */
+
+  register struct proc *hp = proc_addr(h_proc_nr);
+  if(h_enable){
+       register struct proc *hp = proc_addr(h_proc_nr);
+         /* hardening is enable, only VM or KERNEL could run
+          * allow for a VM to run for an instant because of the page fault*/
+       if(h_step == VM_RUN){
+          if((hp->p_rts_flags & RTS_PAGEFAULT)){
+              if(!proc_is_runnable(proc_addr(VM_PROC_NR)))
+                   panic("hardening page fault but VM is not runnable\n");
+               /**Choose the VM to handle the page fault**/
+               else
+                   return proc_addr(VM_PROC_NR);
+          } 
+          else{
+          /**The hardening process is runnable choose it**/
+            if(proc_is_runnable(hp)){
+               assert((h_step_back == FIRST_RUN) ||
+                    (h_step_back == SECOND_RUN));
+               h_step = h_step_back;
+               h_step_back = 0;  
+               if (priv(hp)->s_flags & BILLABLE)	 	
+		get_cpulocal_var(bill_ptr) = hp;
+               return hp;
+            }
+            else
+               panic("Hardened process is not runnable after page fault"
+                     " handled 1\n");  
+         }
+       }  
+       else {
+          /** The hardening process is not runnable 
+           ** because it ends its quantum. 
+           ** We choose to give him quantum**/
+           if(RTS_ISSET(hp, RTS_NO_QUANTUM)) {
+              /** give more CPU time**/
+#if GIVE_QUANTUM
+              hp->p_cpu_time_left = ms_2_cpu_time(hp->p_quantum_size_ms);
+              RTS_UNSET(hp, RTS_NO_QUANTUM);
+              printf ("Hardened process has no quantum "
+                         "enable 2 %d %d\n", h_proc_nr, h_step);
+              if(proc_is_runnable(hp)){
+                     if (priv(hp)->s_flags & BILLABLE)	 	
+		       get_cpulocal_var(bill_ptr) = hp; 
+                     return(hp);
+              }
+              /** We give it quantum but the process is not runnable
+               ** panic, should never happen **/
+              if(proc_is_preempted(hp)){
+                 RTS_UNSET(hp, RTS_PREEMPTED);
+                 if(proc_is_runnable(hp)){
+                    if (priv(hp)->s_flags & BILLABLE)	 	
+		        get_cpulocal_var(bill_ptr) = hp;
+                    return(hp);
+                 }
+              } 
+            panic ("Hardened process is not runnable during hardening "
+                         "enable 2"); 
+#else      
+#if H_DEBUG 
+            printf ("Hardened process has no quantum "
+                         "aborting PE %d %d\n", h_proc_nr, h_step); 
+#endif    
+            abort_pe(hp);
+            return(NULL);  
+#endif
+                        
+           }
+
+            if(hp->p_rts_flags & RTS_INS_COUNTER){
+               RTS_UNSET(hp,RTS_INS_COUNTER);
+               if(proc_is_runnable(hp)){
+                    if (priv(hp)->s_flags & BILLABLE)	 	
+		        get_cpulocal_var(bill_ptr) = hp;
+                    return(hp);
+               }
+               /** We UNSET RTS_INS_COUNTER but the process is not runnable
+                ** panic, should never happen **/
+               else 
+                 panic ("Hardened process is not runnable during hardening "
+                         "enable 3");             
+           }
+           if(proc_is_runnable(hp)) {
+               if (priv(hp)->s_flags & BILLABLE)	 	
+		 get_cpulocal_var(bill_ptr) = hp;
+               return(hp);
+          }
+          else 
+             panic ("Hardened process is not runnable during hardening "
+                         "enable 4");    
+       }
+  }
+  return(NULL);
+
+  /*Fin modification*/
+}
+/*End added by EKA*/
+
+/* Added by EKA*/
+int hmini_receive(struct proc * caller_ptr,
+			endpoint_t src_e, /* which message source is wanted */
+			message * m_buff_usr, /* pointer to message buffer */
+			const int flags){
+    return (mini_receive(caller_ptr,
+			src_e, /* which message source is wanted */
+			m_buff_usr, /* pointer to message buffer */
+			flags));
+}
+/* End added by EKA*/

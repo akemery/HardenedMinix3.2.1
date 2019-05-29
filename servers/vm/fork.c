@@ -96,6 +96,17 @@ int do_fork(message *msg)
   if((r=pt_bind(&vmc->vm_pt, vmc)) != OK)
 	panic("fork can't pt_bind: %d", r);
 
+    /*** Added by EKA ***/
+  if(hardening_enabled){
+     vmc->vm_hflags |= VM_PROC_TO_HARD;
+     vmc->vm_lus1_us2 = NULL;
+     vmc->vm_lus1_us2_size = 0;
+  }
+  if(vmp->vm_hflags & VM_PROC_TO_HARD){
+    //free_pram_mem_blocks(vmp);
+  }
+  /*** End Added by EKA ***/
+
   {
 	vir_bytes vir;
 	/* making these messages writable is an optimisation

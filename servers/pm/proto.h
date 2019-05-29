@@ -56,6 +56,11 @@ int do_getepinfo(void);
 int do_getepinfo_o(void);
 int do_svrctl(void);
 int do_getsetpriority(void);
+/* Added by EKA*/
+int do_enable_hardening(void);
+int do_disable_hardening(void);
+int do_hardening(void);
+/* End added by EKA*/
 
 /* schedule.c */
 void sched_init(void);

@@ -23,6 +23,13 @@
 #include "kernel/smp.h"
 #endif
 
+/** Added by EKA**/
+#include "hproto.h"
+#include "htype.h"
+#include "mca.h"
+#include "rcounter.h"
+/** End Added by EKA**/
+
 #define CLOCK_ACK_BIT   0x80    /* PS/2 clock interrupt acknowledge bit */
 
 /* Clock parameters. */
@@ -305,6 +312,16 @@ void context_stop(struct proc * p)
 		BKL_UNLOCK();
 	}
 #endif
+/* Added by EKA*/
+#if USE_INS_COUNTER
+/**here the system is switching from user space to kernel space
+ ** Just read the value of the retirement counter and store it in 
+ ** p_remaining_ins and in __ins_ctr_switch **/
+   if(h_enable && (h_proc_nr == p->p_nr)){
+	get_remain_ins_counter_value(p);
+ }
+#endif
+/* End Added by EKA*/
 }
 
 void context_stop_idle(void)

@@ -8,7 +8,9 @@
 #include "pt.h"
 #include "vm.h"
 #include "regionavl.h"
-
+/* Added by EKA*/
+#include "htype.h"
+/* End added by EKA*/
 struct vmproc;
 
 typedef void (*callback_t)(struct vmproc *who, message *m);
@@ -42,6 +44,12 @@ struct vmproc {
 #if VMSTATS
 	int vm_bytecopies;
 #endif
+      /* Added by EKA*/
+  /*structure pour maintenir la liste des pages dans le working set*/
+  struct pram_mem_block *vm_lus1_us2;
+  int vm_lus1_us2_size;
+  int vm_hflags; 
+  /* End Added by EKA*/
 };
 
 /* Bits for vm_flags */

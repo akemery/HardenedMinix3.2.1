@@ -214,7 +214,46 @@ LABEL(phys_copy_fault_in_kernel)	/* kernel can send us here */
 	mov	%cr2, %eax
 	ret
 
+/* Added by EKA*/
 
+/*===========================================================================*/
+/*				phys_cmp				     */
+/*===========================================================================*/
+/*
+ * PUBLIC int phys_cmp(phys_bytes source, phys_bytes destination,
+ *			phys_bytes bytecount);
+ * Cmp a block of data from anywhere to anywhere in physical memory.
+ */
+/*		es edi esi eip	 src dst len */
+ENTRY(phys_cmp)
+	push	%ebp
+	mov	%esp, %ebp
+
+	cld
+	push	%esi
+	push	%edi
+
+	mov	8(%ebp), %esi
+	mov	12(%ebp), %edi
+	mov	16(%ebp), %ecx
+
+  cld
+
+  repe cmpsb
+  jne not_equal
+  mov $0, %eax
+  jmp exit
+
+not_equal:
+	mov	$1, %eax		/* 0 means: no fault */
+
+exit:
+  pop	%edi
+	pop	%esi
+	pop	%ebp
+  ret
+
+/* End added by EKA*/
 /*===========================================================================*/
 /*				copy_msg_from_user			     */
 /*===========================================================================*/

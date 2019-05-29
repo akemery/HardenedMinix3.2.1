@@ -25,6 +25,8 @@ int get_mtab_entry(char dev[PATH_MAX], char mount_point[PATH_MAX],
 /* read_tsc() and friends */
 void read_tsc(u32_t *hi, u32_t *lo);
 void read_tsc_64(u64_t *t);
+int h_read_tsc(u32_t *hi, u32_t *lo);
+void h_read_tsc_64(u64_t *t);
 
 /* return values for fsversion */
 #define FSVERSION_MFS1	0x00001

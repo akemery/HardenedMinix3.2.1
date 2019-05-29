@@ -27,6 +27,7 @@
 void free_proc(struct vmproc *vmp)
 {
 	map_free_proc(vmp);
+        
 	pt_free(&vmp->vm_pt);
 	region_init(&vmp->vm_regions_avl);
 	vmp->vm_region_top = 0;
@@ -37,6 +38,9 @@ void free_proc(struct vmproc *vmp)
 
 void clear_proc(struct vmproc *vmp)
 {
+        /*** Added by EKA ***/
+        free_pram_mem_blocks(vmp);
+        /*** End Added by EKA ***/
 	region_init(&vmp->vm_regions_avl);
 	vmp->vm_region_top = 0;
 	vmp->vm_callback = NULL;	/* No pending vfs callback. */

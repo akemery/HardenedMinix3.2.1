@@ -887,7 +887,7 @@ void apic_idt_init(const int reset)
 #ifdef APIC_DEBUG
 	if (is_bsp)
 		printf("APIC debugging is enabled\n");
-	lapic_set_dummy_handlers();
+	//lapic_set_dummy_handlers();
 #endif
 
 	/* Build descriptors for interrupt gates in IDT. */

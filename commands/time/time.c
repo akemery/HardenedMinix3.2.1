@@ -35,6 +35,7 @@ int argc;
 char *argv[];
 {
   int cycles = 0;
+  printf("calling time hahaha%d\n");
   struct tms pre_buf, post_buf;
   int status, pid;
 #if _VMD_EXT
@@ -72,7 +73,7 @@ char *argv[];
 #else
   start_time = times(&dummy);
 #endif
-  read_tsc_64(&start_tsc);
+  h_read_tsc_64(&start_tsc);
 
   /* Fork off child. */
   if ((pid = fork()) < 0) {
@@ -88,7 +89,7 @@ char *argv[];
   do {
 	times(&pre_buf);
   } while (wait(&status) != pid);
-  read_tsc_64(&end_tsc);
+  h_read_tsc_64(&end_tsc);
   spent_tsc = end_tsc - start_tsc;
 #if _VMD_EXT
   (void) sysutime(UTIME_TIMEOFDAY, &end_time);

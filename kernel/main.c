@@ -31,7 +31,13 @@
 #include "watchdog.h"
 #endif
 #include "spinlock.h"
-
+/** Added by EKA**/
+#include "arch/i386/hproto.h"
+#include "arch/i386/htype.h"
+#include "arch/i386/mca.h"
+#include "arch/i386/rcounter.h"
+static void init_hardening_features(void);
+/** End Added by EKA**/
 /* dummy for linking */
 char *** _penviron;
 
@@ -60,7 +66,10 @@ void bsp_finish_booting(void)
   get_cpulocal_var(bill_ptr) = get_cpulocal_var_ptr(idle_proc);
   get_cpulocal_var(proc_ptr) = get_cpulocal_var_ptr(idle_proc);
   announce();				/* print MINIX startup banner */
-
+  /** Added by EKA**/
+  /**Added by EKA: INIT retirement counter and MCA/MCE**/
+  init_hardening_features();
+  /** End added by EKA**/
   /*
    * we have access to the cpu local run queue, only now schedule the processes.
    * We ignore the slots for the former kernel tasks
@@ -309,6 +318,26 @@ void kmain(kinfo_t *local_cbi)
 
   NOT_REACHABLE;
 }
+
+/** Added by EKA**/
+static void init_hardening_features(void){
+  
+#if USE_MCA
+   enables_all_mca_features();
+   enable_loggin_ofall_errors();
+   clears_all_errors();
+   enable_machine_check_exception();
+#endif
+
+#if USE_INS_COUNTER
+#if USE_FIX_CTR
+	intel_fixed_insn_counter_init();
+#else
+	intel_arch_insn_counter_init();
+#endif
+#endif 
+}
+/** End Added by EKA**/
 
 /*===========================================================================*
  *				announce				     *
