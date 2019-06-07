@@ -298,6 +298,8 @@ EXTERN int id_last_inject_pe;
 EXTERN int id_current_pe;
 EXTERN int could_inject; /**could inject fault when start first or second run**/
 EXTERN int h_can_start_hardening;
+EXTERN int h_inject_fault;
+EXTERN int h_ss_mode;
 
 
 EXTERN struct hardening_shared_region *all_hsr_s;

@@ -87,16 +87,17 @@ void start_dwc(struct proc *p){
 #endif
            /* enable the hardening */
            h_enable = H_ENABLE;
-#if INJECT_FAULT
-      if(could_inject == H_YES){
+   if(h_inject_fault){
+      if((could_inject == H_YES) && !(p->p_nb_pe%2)){
 #if 0
            inject_error_in_all_cr(p);
 #endif
            inject_error_in_gpregs(p);
            could_inject = H_NO;
            nb_injected_faults++;
+           p->p_nb_inj_fault++;
        }
-#endif
+     }
   }
   if((h_enable == H_ENABLE)  &&
         ( (h_restore == RESTORE_FOR_SECOND_RUN) ||
@@ -150,16 +151,17 @@ void start_dwc(struct proc *p){
 #endif
      /* be sure the process remain runnable*/
      assert(proc_is_runnable(p)); 
-#if INJECT_FAULT 
-    if(could_inject == H_YES){
+    if(h_inject_fault){
+        if((could_inject == H_YES) && (p->p_nb_pe%2)){
 #if 0
         inject_error_in_all_cr(p);
 #endif
         inject_error_in_gpregs(p);
         could_inject = H_NO;
         nb_injected_faults++;
+        p->p_nb_inj_fault++;
       }
-#endif
+    }
   }
   if(h_enable && (h_proc_nr != p->p_nr) &&
            (p->p_nr != VM_PROC_NR) )
@@ -230,8 +232,10 @@ void hardening_task(void){
     assert(h_proc_nr == p->p_nr);
     assert(h_proc_nr != VM_PROC_NR);
     /* Should only be called during 1st or 2nd run */
+#if CHECK_DEBUG
     assert((h_step == FIRST_RUN) || 
        (h_step == SECOND_RUN)); 
+#endif
     get_remain_ins_counter_value(p);
     save_context(p);
     if(h_step == FIRST_RUN){ 
@@ -267,7 +271,7 @@ void hardening_task(void){
           /* comparison of context1 and context 2. 
            * Here we compare the saved 
            * registers */
-          if(!cmp_reg(p) || cmp_mem(p)!=OK){
+cmp_step:  if(!cmp_reg(p) || cmp_mem(p)!=OK){
           /* That means the system is in unstable state
            *  because the comparison stage failed.
            *  The solution is to cancel all 
@@ -278,7 +282,7 @@ void hardening_task(void){
            * in the kernel.
            * it should certainly not be spread 
            * to the rest of the system**/
-             h_unstable_state = H_UNSTABLE;
+             //h_unstable_state = H_UNSTABLE;
 #if H_DEBUG
              printf("context non identique %d %d\n",
                p->p_endpoint, h_normal_pf);
@@ -289,7 +293,15 @@ void hardening_task(void){
              /** Prevent the PE from running**/
              p->p_rts_flags |= RTS_UNSTABLE_STATE;
              nbpe_f++;
-             return;
+             p->p_nb_dwc_d_f++;
+             if((origin_syscall == 6) ||
+                (origin_syscall == 7) ||
+                (origin_syscall == 8) )
+                p->p_nb_exception_d_f++;
+             run_proc_2(p);
+              /*not reachable go directly to 
+               the hardening process */
+             NOT_REACHABLE;
           }
           
        /* copy of us2 to us0 */
@@ -300,7 +312,8 @@ void hardening_task(void){
        return;
    }
    else{
-      panic("UNKOWN HARDENING STEP %d\n", h_step);
+      printf("UNKOWN HARDENING STEP %d\n", h_step);
+      goto cmp_step;
    }
       
 }
@@ -334,12 +347,14 @@ void static reset_hardened_run(struct proc *p){
        pagefault_addr_2 = 0;
        nbpe++;
        p->p_nb_pe++;
+       //could_inject = H_YES;
        if(p->p_misc_flags & MF_STEP)
            p->p_misc_flags &= ~MF_STEP;
-#if H_DEBUG_3
-       printf("PE OK #ws: %d #us1_us2: %d nbpe: %d ticks %d\n",
+       h_ss_mode = 0;
+#if 1
+       printf("PE OK #ws: %d #us1_us2: %d nbpe: %d ticks %d  #pe %d\n",
             p->p_workingset_size,
-                       p->p_lus1_us2_size, nbpe, p->p_ticks);
+                       p->p_lus1_us2_size, nbpe, p->p_ticks, p->p_nb_pe);
 #endif
 
 }

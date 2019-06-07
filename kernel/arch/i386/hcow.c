@@ -187,102 +187,103 @@ int inject_error_in_all_cr(struct proc *p){
 
 int inject_error_in_gpregs(struct proc *p){
   static int gpr_bit_id = 0;
-   int i = 1 << (gpr_bit_id % REG_SIZE);
+  int i = 1 << (gpr_bit_id % REG_SIZE);
+  printf("Injecting  %d %d\n",p->p_endpoint , h_step );
   if(gpr_bit_id < REG_SIZE){
-      printf("Injecting in psw register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in psw register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       if((gpr_bit_id % REG_SIZE)!=17)
         p->p_reg.psw = (p->p_reg.psw&i) ? (p->p_reg.psw & ~i) : p->p_reg.psw | i;
       else
-        printf("No Injecting in psw register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+        printf("No Injecting in psw register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
   }
   if((gpr_bit_id >= REG_SIZE) && (gpr_bit_id < 2*REG_SIZE)){
-      printf("Injecting in ss register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in ss register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.ss = (p->p_reg.ss&i) ? (p->p_reg.ss & ~i) : p->p_reg.ss | i;
   }
 
   if((gpr_bit_id >= 2*REG_SIZE) && (gpr_bit_id < 3*REG_SIZE)){
-      printf("Injecting in sp register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in sp register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
        p->p_reg.sp = (p->p_reg.sp&i) ? (p->p_reg.sp & ~i) : p->p_reg.sp | i;
   }
   if((gpr_bit_id >= 3*REG_SIZE) && (gpr_bit_id < 4*REG_SIZE)){
-      printf("Injecting in cs register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in cs register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.cs = (p->p_reg.cs&i) ? (p->p_reg.cs & ~i) : p->p_reg.cs | i;
   }
 
   if((gpr_bit_id >= 4*REG_SIZE) && (gpr_bit_id < 5*REG_SIZE)){
-      printf("Injecting in di register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in di register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.di = (p->p_reg.di&i) ? (p->p_reg.di & ~i) : p->p_reg.di | i;
   }
 
   if((gpr_bit_id >= 5*REG_SIZE) && (gpr_bit_id < 6*REG_SIZE)){
-      printf("Injecting in si register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in si register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.si = (p->p_reg.si&i) ? (p->p_reg.si & ~i) : p->p_reg.si | i;
   }
 
   if((gpr_bit_id >= 6*REG_SIZE) && (gpr_bit_id < 7*REG_SIZE)){
-      printf("Injecting in fp register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in fp register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.fp = (p->p_reg.fp&i) ? (p->p_reg.fp & ~i) : p->p_reg.fp | i;
   }
 
   if((gpr_bit_id >= 7*REG_SIZE) && (gpr_bit_id < 8*REG_SIZE)){
-      printf("Injecting in bx register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in bx register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.bx = (p->p_reg.bx&i) ? (p->p_reg.bx & ~i) : p->p_reg.bx | i;
   }
 
   if((gpr_bit_id >= 8*REG_SIZE) && (gpr_bit_id < 9*REG_SIZE)){
-      printf("Injecting in dx register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in dx register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.dx = (p->p_reg.dx&i) ? (p->p_reg.dx & ~i) : p->p_reg.dx | i;
   }
 
   if((gpr_bit_id >= 9*REG_SIZE) && (gpr_bit_id < 10*REG_SIZE)){
-      printf("Injecting in cx register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in cx register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.cx = (p->p_reg.cx&i) ? (p->p_reg.cx & ~i) : p->p_reg.cx | i;
   }
 
   if((gpr_bit_id >= 10*REG_SIZE) && (gpr_bit_id < 11*REG_SIZE)){
-      printf("Injecting in retreg register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in retreg register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.retreg = (p->p_reg.retreg&i) ? (p->p_reg.retreg & ~i) : p->p_reg.retreg | i;
   }
 
   if((gpr_bit_id >= 11*REG_SIZE) && (gpr_bit_id < 12*REG_SIZE)){
-      printf("Injecting in pc register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in pc register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.pc = (p->p_reg.pc&i) ? (p->p_reg.pc & ~i) : p->p_reg.pc | i;
   }
  
   if((gpr_bit_id >= 12*REG_SIZE) && (gpr_bit_id < 13*REG_SIZE)){
-      printf("Injecting in ds register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in ds register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.ds = (p->p_reg.ds&i) ? (p->p_reg.ds & ~i) : p->p_reg.ds | i;
   }
 
   if((gpr_bit_id >= 13*REG_SIZE) && (gpr_bit_id < 14*REG_SIZE)){
-      printf("Injecting in es register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in es register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
      p->p_reg.es = (p->p_reg.es&i) ? (p->p_reg.es & ~i) : p->p_reg.es | i;
   }
 
   if((gpr_bit_id >= 14*REG_SIZE) && (gpr_bit_id < 15*REG_SIZE)){
-      printf("Injecting in fs register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in fs register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.fs = (p->p_reg.fs&i) ? (p->p_reg.fs & ~i) : p->p_reg.fs | i;
   }
 
   if((gpr_bit_id >= 15*REG_SIZE) && (gpr_bit_id < 16*REG_SIZE)){
-      printf("Injecting in gs register bit %d %d\n", 
-                      gpr_bit_id % REG_SIZE , gpr_bit_id );
+      printf("Injecting in gs register bit %d %d %d\n", 
+                      gpr_bit_id % REG_SIZE , gpr_bit_id, p->p_nb_pe );
       p->p_reg.gs = (p->p_reg.gs&i) ? (p->p_reg.gs & ~i) : p->p_reg.gs | i;
   }
   gpr_bit_id++;

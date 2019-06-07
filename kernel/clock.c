@@ -152,26 +152,42 @@ int timer_int_handler(void)
 
 	}
 /** Added by EKA**/
-#if INJECT_FAULT
+
+
+if(h_inject_fault){
          /***Can I enable injection?**/
+
         if(could_inject == H_NO){
-          if((id_current_pe - id_last_inject_in_gpreg) >= H_TO_INJECT_IN_GP){
+          if((id_current_pe - id_last_inject_pe) >=H_PERIOD_TO_INJECT){
               could_inject = H_YES;
-              id_last_inject_in_gpreg = id_current_pe;
-          }
-          if((id_current_pe - id_last_inject_in_crreg) >= H_TO_INJECT_IN_CR){
-              could_inject = H_YES;
-              id_last_inject_in_crreg = id_current_pe;    
+              id_last_inject_pe = id_current_pe;
           }
           if(id_current_pe >= H_THRESHOLD_PE){
                 /**To avoid integer overflow***/
-                id_last_inject_in_gpreg = 0; 
-                id_last_inject_in_crreg  = 0;
+                id_last_inject_pe = 0;
                 id_current_pe = 0;
           }
         }
-        
+#if 0
+        if((could_inject == H_YES) && 
+        (p->p_hflags & PROC_TO_HARD)){
+           inject_error_in_gpregs(p);
+           could_inject == H_NO;
+        }   
+
+       if((p->p_hflags & PROC_TO_HARD) && (could_inject == H_YES)){
+           if((!p->p_last_inject_pe) || 
+              (p->p_nb_pe - p->p_last_inject_pe) >=H_PERIOD_TO_INJECT){
+               inject_error_in_gpregs(p);
+               p->p_last_inject_pe = p->p_nb_pe;
+               nb_injected_faults++;
+               p->p_nb_inj_fault++;
+               could_inject = H_NO;
+           }
+       }
 #endif
+}
+ 
 /** end Added by EKA**/
 	arch_timer_int_handler();
 

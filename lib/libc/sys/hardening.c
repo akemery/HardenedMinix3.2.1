@@ -27,6 +27,14 @@ int hardening(int type, pid_t pid,
           m.HTASK_TYPE = HTASK_DISPLAY_HARDENIG;
           m.HTASK_P_ENDPT   = pid; 
           break; 
+     case HTASK_EN_INJECT:
+          m.HTASK_TYPE = HTASK_EN_INJECT;
+          m.HTASK_P_ENDPT      = pid;
+          break;
+     case HTASK_DIS_INJECT:
+          m.HTASK_TYPE = HTASK_DIS_INJECT;
+          m.HTASK_P_ENDPT      = pid;
+          break;
      default:
           return(-1);
   }

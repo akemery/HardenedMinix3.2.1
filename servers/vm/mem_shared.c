@@ -179,6 +179,23 @@ void shared_setsource(struct vir_region *vr, endpoint_t ep,
 	assert(srcvr == src_vr);
 
 	srcvr->remaps++;
+        /** Added by EKA***/
+         struct vmproc *vmp_shr = vr->parent;
+         if(vmp_shr && 
+                     (vmp_shr->vm_hflags & VM_PROC_TO_HARD) && 
+                     (vmp_shr->vm_endpoint != NONE) && 
+                     (vmp_shr->vm_endpoint != VM_PROC_NR)){    
+#if H_DEBUG   
+            printf("setsource %d 0x%lx 0x%lx id %d ep: %d id_r: %d vaddr: 0x%lx\n",
+                   vmp_shr->vm_endpoint, vr->vaddr, 
+                   vr->length, vr->id, vr->param.shared.ep,
+                   vr->param.shared.id, vr->param.shared.vaddr);
+#endif
+            if(sys_hsr(vmp_shr->vm_endpoint, vr->vaddr, 
+               vr->length, vr->param.shared.id )!=OK)
+              panic("shared_setsource: sys_hsr failed\n");
+         }
+         /** End Added by EKA***/
 }
 
 static int shared_copy(struct vir_region *vr, struct vir_region *newvr)

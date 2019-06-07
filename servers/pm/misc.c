@@ -549,6 +549,14 @@ int do_hardening(void){
            sys_hardening(PM_PROC_NR, 
               HTASK_DISPLAY_HARDENIG , 0, NULL,0);
           break;
+     case HTASK_EN_INJECT:
+          sys_hardening(PM_PROC_NR, 
+              HTASK_EN_INJECT , 0, NULL,0);
+          break;
+     case HTASK_DIS_INJECT:
+          sys_hardening(PM_PROC_NR, 
+              HTASK_DIS_INJECT , 0, NULL,0);
+          break;
   }
   return(OK);
 }

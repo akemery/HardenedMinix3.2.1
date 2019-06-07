@@ -41,7 +41,8 @@ SRCS+= 	\
         do_hmem_map.c \
         do_hardening.c \
         do_free_pmbs.c \
-        do_addregionto_ws.c
+        do_addregionto_ws.c \
+        do_hsr.c
 
 .if ${MACHINE_ARCH} == "i386"
 SRCS+=  \

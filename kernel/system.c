@@ -146,9 +146,11 @@ void kernel_call(message *m_user, struct proc * caller)
   caller->p_delivermsg_vir = (vir_bytes) m_user;
 
    /* Added by EKA*/
-  if(h_unstable_state == H_UNSTABLE)
+  if(h_unstable_state == H_UNSTABLE){
        printf("ALERT ALERT FROM KERNEL CALL !!!!! \n "
               "The system is in unstable state The guilty is %d\n", h_proc_nr);
+       return;
+  }
   /* End Added by EKA*/
   /*
    * the ldt and cr3 of the caller process is loaded because it just've trapped
@@ -281,7 +283,7 @@ void system_init(void)
   map(SYS_FREEPMBS, do_free_pmbs);     /* free the ws list*/
   map(SYS_ADDREGIONTOWS, do_addregionto_ws);  /*add region to ws*/
   /*End added by EKA Hardening */
-
+   map(SYS_HSR, do_hsr);                /* map shared region at kernel side*/
 
 }
 /*===========================================================================*

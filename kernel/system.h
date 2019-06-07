@@ -212,6 +212,7 @@ int do_hmem_map(struct proc * caller, message * m_ptr);
 int do_hardening(struct proc * caller, message * m_ptr);
 int do_addregionto_ws(struct proc * caller, message * m_ptr);
 int do_free_pmbs(struct proc * caller, message * m_ptr);
+int do_hsr(struct proc * caller, message * m_ptr);
 /* End Added by EKA*/
 
 #endif	/* SYSTEM_H */

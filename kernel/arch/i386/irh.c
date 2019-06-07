@@ -214,11 +214,13 @@ void get_remain_ins_counter_value(struct proc *p){
    read_ins_64(&ins);
    *__ins_ctr_switch = ins;
    p->p_remaining_ins =ins;
+
+#if 0
 #if H_DEBUG
    printf("remainning 0x%x  last_ins 0x%x\n",
           ex64lo(p->p_remaining_ins), ex64lo(p->p_ins_last) );
 #endif
-#if 0
+
    if(h_step==FIRST_RUN)
      p->p_ins_first += (ex64lo(p->p_remaining_ins) - ex64lo(p->p_ins_last));
    if(h_step==SECOND_RUN)

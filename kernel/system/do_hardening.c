@@ -85,6 +85,14 @@ int do_hardening(struct proc * caller,
           //if(h_can_start_hardening == ENABLE_HARDENING)
           display_hardened_proc();
           break;
+     case HTASK_EN_INJECT:
+          h_inject_fault = ENABLE_INJECTING;
+          break;
+     case HTASK_DIS_INJECT:
+          h_inject_fault = DISABLE_INJECTING;
+          break;
+     default:
+          break;
   }
   return(OK);
 }

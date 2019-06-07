@@ -361,10 +361,12 @@
 #define SYS_FREEPMBS (KERNEL_CALL + 59)      /* sys_free_pmbs() */
 
 #define SYS_ADDREGIONTOWS (KERNEL_CALL + 60)      /* sys_addregionto_ws() */
+
+#define SYS_HSR (KERNEL_CALL + 61)      /* sys_hrs() */
 /* End added by EKA*/
 
 /* Total */
-#define NR_SYS_CALLS	61	/* number of kernel calls */
+#define NR_SYS_CALLS	62	/* number of kernel calls */
 
 #define SYS_CALL_MASK_SIZE BITMAP_CHUNKS(NR_SYS_CALLS)
 
@@ -1317,6 +1319,13 @@
 #define HMEM_R_ID               m10_i3
 #define H_NPROCS_TO_START_H    0x10800
 
+/* Field for SYS_HSR*/
+#define HSR_ENDPT	        m10_i4	/* process endpoint */
+#define HSR_VADDR        	m10_l1	/* HSR vaddr */
+#define HSR_LENGTH      	m10_l2	/* HSR length */
+#define HSR_R_ID                m10_i3  /* HSR id*/
+
+
 /** Field names for SYS_HARDENING**/
 #define HTASK_TYPE              m10_i1
 #define HTASK_P_ENDPT           m10_i2
@@ -1331,10 +1340,13 @@
 #define HTASK_EN_HARDENING_PNAME    0x10
 #define HTASK_DIS_HARDENING_PNAME   0x20
 #define HTASK_DISPLAY_HARDENIG      0x40
+#define HTASK_EN_INJECT             0x80
+#define HTASK_DIS_INJECT           0x100
 
 #define H_DEBUG                        0
 #define H_DEBUG_2                      0
 #define H_DEBUG_3                      0
+#define H_DEBUG_4                      1
 
 #define HADDREGIONTOWS_ENDPT	        m10_i4	/* process endpoint */
 #define HADDREGIONTOWS_RLENGTH	        m10_i3	/* region length */
@@ -1349,6 +1361,8 @@
 
 #define ENABLE_HARDENING  1
 #define DISABLE_HARDENING 0
+#define ENABLE_INJECTING  1
+#define DISABLE_INJECTING 0
 /* End added by EKA*/
 
 /* _MINIX_COM_H */

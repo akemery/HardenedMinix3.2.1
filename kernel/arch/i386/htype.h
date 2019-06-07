@@ -134,7 +134,7 @@ struct hardening_shared_region{
 #define H_INCORRECTION         2
 #define H_PERIOD_TO_INJECT    10
 #define H_THRESHOLD_PE     65300
-#define INJECT_FAULT           0
+#define INJECT_FAULT           1
 #define H_PAGE_FAULT           6
 #define REG_SIZE              32
 #define FROM_EXEC           0x10

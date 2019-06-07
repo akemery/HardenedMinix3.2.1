@@ -78,6 +78,7 @@ SRCS+=  \
         sys_hardening.c \
         sys_free_pmbs.c \
         sys_addregionto_ws.c \
+        sys_hsr.c \
 	taskcall.c \
 	tickdelay.c \
 	timers.c \

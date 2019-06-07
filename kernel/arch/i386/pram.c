@@ -133,7 +133,7 @@ int check_vaddr_2(struct proc *p,
 #endif
    if((pmb->us1!=MAP_NONE) && 
       (pmb->us2!=MAP_NONE)){
-#if H_DEBUG
+#if 0
       printf("a page fault handled by the kernel"
            "%d %d 0x%lx\n", h_proc_nr, h_step, vaddr);
 #endif
@@ -918,13 +918,16 @@ int set_pe_mem_to_ro(struct proc *p, u32_t *root){
                  panic("add_region_to_ws "
                " second_phys failed\n"); 
          pmb->flags &= ~H_TO_UPDATE;
+         pte_v &= ~I386_VM_DIRTY;
 
       }
 #if H_DEBUG
+#if 0
       printf("INITIALIZING 0x%lx pram 0x%lx " 
                      "first 0x%lx second 0x%lx\n",
               pmb->vaddr, pmb->us0, 
               pmb->us1, pmb->us2);  
+#endif
      if((pmb->us1!= MAP_NONE) && 
          (pmb->us2!=MAP_NONE) && 
          (h_step == FIRST_RUN)){

@@ -410,16 +410,15 @@ check_misc_flags:
          ** wrong in the micro-kernel and in the CPU. It's now time to 
          ** run the PE again **/
        if(h_unstable_state == H_UNSTABLE){
-#if H_DEBUG
-              /** Just to know where we are**/
-              printf("ALERT ALERT FROM SWITCH TO USER !!!!! \n "
-              "The system is in unstable state the guilty is %d\n", 
-              h_proc_nr);
-#endif
+
               /** set the unstable state to in correction**/
-              h_unstable_state = H_INCORRECTION;
+              //h_unstable_state = H_INCORRECTION;
               /**get the ptr on the PE process**/
               p = proc_addr(h_proc_nr);
+              /** Just to know where we are**/
+              printf("ALERT ALERT FROM SWITCH TO USER !!!!! \n "
+              "The system is in unstable state the guilty is %d %d (%d)\n", 
+              h_proc_nr, p->p_endpoint, p->p_nb_pe);
               /**launch the PE **/
               run_proc_2(p);
        }
@@ -563,12 +562,12 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
   int call_nr = (int) r1;
 
   /*** Added by EKA ***/
+
   if(h_unstable_state == H_UNSTABLE){
       /** The system is an unstable state do not handle the IPC**/
       printf("ALERT ALERT FROM DO IPC !!!!! \n"
               "The system is in unstable state The guilty is %d %d %d\n", 
-             h_proc_nr, call_nr, caller_ptr->p_nr );
-      //halt_cpu();
+             h_proc_nr, call_nr, caller_ptr->p_endpoint );
       return(OK);
   }
   /*** End added by EKA ***/
@@ -1919,6 +1918,8 @@ void copr_not_available_handler(void)
 
 	/* if FPU is not owned by anyone, do not store anything */
 	local_fpu_owner = get_cpulocal_var_ptr(fpu_owner);
+
+        
 	if (*local_fpu_owner != NULL) {
 		assert(*local_fpu_owner != p);
 		save_local_fpu(*local_fpu_owner, FALSE /*retain*/);

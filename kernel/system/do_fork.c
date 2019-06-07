@@ -155,6 +155,11 @@ int do_fork(struct proc * caller, message * m_ptr)
   rpc->p_ticks = 0;
   rpc->p_nb_abort = 0;
   rpc->p_nb_ss = 0;
+  rpc->p_nb_dwc_d_f = 0;
+  rpc->p_nb_inj_fault = 0;
+  rpc->p_nb_exception_d_f = 0;
+  rpc->p_nb_interrupt = 0;
+  rpc->p_last_inject_pe = 0;
   if(rpp->p_hflags & PROC_TO_HARD){
 #if H_DEBUG
      display_mem(rpp);

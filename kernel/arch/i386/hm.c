@@ -103,6 +103,9 @@ void init_hardening(void){
   int nb_scall = 0;
   int nb_interrupt = 0;
   int nb_nmi = 0;
+  int h_inject_fault = 0;
+  could_inject = H_YES;
+  int h_ss_mode = 0;
   for(i=0; i<10; i++)
     hc_proc_nr[i] = 0;
   for(pmb = BEG_PRAM_MEM_BLOCK_ADDR;

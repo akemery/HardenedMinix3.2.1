@@ -646,6 +646,40 @@ ENTRY(cont_exception_handling)
 	jmp	_C_LABEL(switch_to_user)
 
 exception_entry_nested:
+        /*Added by EKA*/
+        /* added by EKA check  hardening task first or second run*/
+	cmpl $1, h_step
+        jz save_reg_k_1
+         cmpl $2, h_step
+        jz save_reg_k_2
+ENTRY(save_ctx_k_1)
+ /*Added by EKA*/
+        /* remember where interrupt come from*/
+        mov $9  ,   %eax
+	mov %eax, origin_syscall 
+        /* save the esp that contains the frame pointer*/
+        mov %esp, esp_s  
+        /* save the ebp that points to the proc struct*/
+        mov %ebp, ebp_s  
+        /* handle the page fault in hardening manner if it is 1st run*/
+        /*check  hardening task first run*/
+        cmpl $1, h_step   
+	jz  hardening_k_entry
+	/* handle the page fault in hardening manner if it is 2nd run*/
+        /*check  hardening task second run*/
+	cmpl $2, h_step 
+	jz  hardening_k_entry
+        /*Stepping first run*/
+        cmpl $4, h_step 
+	jz hardening_k_entry
+        
+ENTRY(cont_k_handling) 
+        /* continue the normal exception handling 
+         * restore esp and ebp */
+        movl esp_s, %esp
+        movl ebp_s, %ebp
+/** end EKA addition**/
+        /*End added by EKA*/
 
 	pusha
 	mov	%esp, %eax
@@ -744,6 +778,54 @@ ENTRY(save_reg_2)
 	mov %ebp, ebp_s2
 	mov %esp, esp_s2
         jmp save_ctx_1
+
+ENTRY(save_reg_co_1)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s1
+	mov %ebx, ebx_s1
+	mov %ecx, ecx_s1
+	mov %edx, edx_s1
+	mov %esi, esi_s1
+	mov %edi, edi_s1
+	mov %ebp, ebp_s1
+	mov %esp, esp_s1
+        jmp save_ctx_co_1
+
+ENTRY(save_reg_co_2)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s2
+	mov %ebx, ebx_s2
+	mov %ecx, ecx_s2
+	mov %edx, edx_s2
+	mov %esi, esi_s2
+	mov %edi, edi_s2
+	mov %ebp, ebp_s2
+	mov %esp, esp_s2
+        jmp save_ctx_co_1
+
+ENTRY(save_reg_k_1)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s1
+	mov %ebx, ebx_s1
+	mov %ecx, ecx_s1
+	mov %edx, edx_s1
+	mov %esi, esi_s1
+	mov %edi, edi_s1
+	mov %ebp, ebp_s1
+	mov %esp, esp_s1
+        jmp save_ctx_k_1
+
+ENTRY(save_reg_k_2)
+        /**Save the general purpose registers*/
+        mov %eax, eax_s2
+	mov %ebx, ebx_s2
+	mov %ecx, ecx_s2
+	mov %edx, edx_s2
+	mov %esi, esi_s2
+	mov %edi, edi_s2
+	mov %ebp, ebp_s2
+	mov %esp, esp_s2
+        jmp save_ctx_k_1
 /*End added by EKA*/
 
 
@@ -830,9 +912,46 @@ LABEL(inval_opcode)
 	EXCEPTION_NO_ERR_CODE(INVAL_OP_VECTOR)
 
 LABEL(copr_not_available)
+        /*Added by EKA*/
+        /* added by EKA check  hardening task first or second run*/
+	cmpl $1, h_step
+        jz save_reg_co_1
+         cmpl $2, h_step
+        jz save_reg_co_2
+
+ENTRY(save_ctx_co_1)
+        /*End added by EKA*/
 	TEST_INT_IN_KERNEL(4, copr_not_available_in_kernel)
 	cld			/* set direction flag to a known value */
 	SAVE_PROCESS_CTX(0, KTS_INT_HARD)
+       /*Added by EKA*/
+        /* remember where interrupt come from*/
+        mov $8  ,   %eax
+	mov %eax, origin_syscall 
+        /* save the esp that contains the frame pointer*/
+        mov %esp, esp_s  
+        /* save the ebp that points to the proc struct*/
+        mov %ebp, ebp_s  
+        /* handle the page fault in hardening manner if it is 1st run*/
+        /*check  hardening task first run*/
+        cmpl $1, h_step   
+	jz  hardening_co_not_avail_entry
+	/* handle the page fault in hardening manner if it is 2nd run*/
+        /*check  hardening task second run*/
+	cmpl $2, h_step 
+	jz  hardening_co_not_avail_entry
+        /*Stepping first run*/
+        cmpl $4, h_step 
+	jz hardening_co_not_avail_entry
+        
+ENTRY(cont_co_not_available_handling) 
+        /* continue the normal exception handling 
+         * restore esp and ebp */
+        movl esp_s, %esp
+        movl ebp_s, %ebp
+/** end EKA addition**/
+        /*End added by EKA*/
+
 	/* stop user process cycles */
 	push	%ebp
 	mov	$0, %ebp
@@ -878,6 +997,53 @@ LABEL(machine_check)
 
 LABEL(simd_exception)
 	EXCEPTION_NO_ERR_CODE(SIMD_EXCEPTION_VECTOR)
+
+
+/** An exception occur. Verify the nature of the exception
+ ** - If it is a normal PF let the VM handle it
+ ** - If it is a hardened PF let the kernel handle it**/
+
+ENTRY(hardening_co_not_avail_entry)
+     push	%esp  /* push the frame pointer to the stack*/
+     /* call the hardening exception handler*/
+     call _C_LABEL(hardening_exception_handler) 
+     add	$4, %esp
+     /* It is normal page fault or retirement counter exception overflow
+      * go to hardening_co_not_avail_task_entry
+      * hardening_exception_handler had set h_stop_pe = 1  */
+     cmpl $1, h_stop_pe 
+     /* The kernel should handle the PF*/
+     jz  hardening_co_not_avail_task_entry
+     /* continue to the normal exception handling*/
+     jmp cont_co_not_available_handling 
+
+     /* call the hardening task with handle hardening activities */
+ENTRY(hardening_co_not_avail_task_entry)
+     call _C_LABEL(hardening_task) 
+     /* go to the normal exception handling */
+     jmp cont_co_not_available_handling 
+
+ENTRY(hardening_k_entry)
+     push	%esp  /* push the frame pointer to the stack*/
+     /* call the hardening exception handler*/
+     call _C_LABEL(hardening_exception_handler) 
+     add	$4, %esp
+     /* It is normal page fault or retirement counter exception overflow
+      * go to hardening_co_not_avail_task_entry
+      * hardening_exception_handler had set h_stop_pe = 1  */
+     cmpl $1, h_stop_pe 
+     /* The kernel should handle the PF*/
+     jz  hardening_k_task_entry
+     /* continue to the normal exception handling*/
+     jmp cont_k_handling 
+
+     /* call the hardening task with handle hardening activities */
+ENTRY(hardening_k_task_entry)
+     call _C_LABEL(hardening_task) 
+     /* go to the normal exception handling */
+     jmp cont_k_handling
+
+/*End added by EKA*/
 
 /*===========================================================================*/
 /*				reload_cr3				     */

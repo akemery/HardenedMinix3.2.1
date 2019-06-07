@@ -610,20 +610,7 @@ mem_type_t *memtype;
 #endif
 
 	SANITYCHECK(SCL_FUNCTIONS);
-       /** Added by EKA***/
-         /** Added by EKA***/
-        if(newregion->memtype == &mem_type_shared){
-           printf("A shared memory 0x%lx 0x%lx\n",newregion->vaddr, 
-                   newregion->length);
-           if(sys_hmem_map(vmp->vm_endpoint, newregion->vaddr,
-                        newregion->length, -10L, newregion->id )!=OK)
-              panic("map_page_region: sys_hmem_map failed\n");
-        }
-        /** End Added by EKA***/
-
-        /** End Added by EKA***/
-
-
+       
 	return newregion;
 }
 

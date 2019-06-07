@@ -48,12 +48,17 @@ int do_clear(struct proc * caller, message * m_ptr)
   }
 
   /* Add by EKA: free the PE working set list */
+
    if(rc->p_hflags & PROC_TO_HARD){
-      printf("### clearing proc: %s %d ticks: %d user: %d sys: %d#### "
-             "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d\n", 
+#if H_DEBUG_4
+      printf("###STATS : %s %d ticks: %d user: %d sys: %d #####"
+             "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d"
+             "#injected_fault %d #dwc_d %d #exception_d %d\n", 
          rc->p_name, rc->p_endpoint, rc->p_ticks, rc->p_user_time, 
          rc->p_sys_time, rc->p_nb_pe, rc->p_nb_nmi, rc->p_lus1_us2_size,
-         rc->p_nb_abort, rc->p_nb_ss);
+         rc->p_nb_abort, rc->p_nb_ss, rc->p_nb_inj_fault, rc->p_nb_dwc_d_f,
+         rc->p_nb_exception_d_f);
+#endif
       free_pram_mem_blocks(rc, 1);
       handle_hsr_events(rc);
       free_hsrs(rc);

@@ -65,16 +65,27 @@ void hardening_exception_handler(
    assert(h_proc_nr != VM_PROC_NR);
    get_remain_ins_counter_value(p);
    h_stop_pe = H_YES;
+#if 1
+     if(frame->vector!=PAGE_FAULT_VECTOR)
+     printf("#### GOT EXCEPTION %d %d %d (%d) {%d} ####\n", 
+            h_step,h_proc_nr,p->p_nr, frame->vector, origin_syscall);
+#endif
    switch(frame->vector){
       case DIVIDE_VECTOR :
            break;
       case DEBUG_VECTOR :
-           if(ssh(p)!=OK)
-               h_stop_pe = H_NO;
+#if 1
+           printf("#### GOT DEBUG %d %d %d\n####", 
+            h_step,h_proc_nr,p->p_nr);
+#endif
+           if(h_ss_mode){
+              if(ssh(p)!=OK)
+                 h_stop_pe = H_NO;
+           }
            break;
       case NMI_VECTOR :
 #if H_DEBUG
-           printf("#### GOT NMI HAHAHA %d %d %d####", 
+           printf("#### GOT NMI HAHAHA %d %d %d\n####", 
             h_step,h_proc_nr,p->p_nr);
 #endif
            if(irh()!=OK)
@@ -138,8 +149,10 @@ void hardening_exception_handler(
       case SIMD_EXCEPTION_VECTOR:
            break; 
       default :
-           panic("Unkown exception vector in"
-             "hardening_exception_handler");
+#if H_DEBUG
+           printf("Unkown exception vector in"
+             "hardening_exception_handler %d %d\n", h_step, origin_syscall);
+#endif
            break;
 
    }

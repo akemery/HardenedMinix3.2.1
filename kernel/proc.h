@@ -154,6 +154,11 @@ struct proc {
   int p_nb_pe;
   int p_nb_abort;
   int p_nb_ss;
+  int p_nb_dwc_d_f;
+  int p_nb_inj_fault;
+  int p_nb_exception_d_f;
+  int p_nb_interrupt;
+  int p_last_inject_pe;
 
 #if DEBUG_TRACE
   int p_schedules;

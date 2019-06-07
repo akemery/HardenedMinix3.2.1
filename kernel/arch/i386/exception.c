@@ -229,26 +229,29 @@ void exception_handler(int is_nested, struct exception_frame * frame)
   ep = &ex_data[frame->vector];
 
   /* Added by EKA*/
+
   if(h_unstable_state == H_UNSTABLE){
+       saved_proc->p_nb_exception_d_f++;
        switch(frame->vector){
             case PAGE_FAULT_VECTOR:
                  /** It is like a bad page fault
                   ** Put the CPU in a stable state
                   ** Return from the exception **/
-                 halt_cpu();
-#if H_DEBUG
+#if 1
                  printf("ALERT ALERT FROM EXCEPTION HANDLER !!!!! \n "
                        "The system is in unstable state the guilty is %d %d\n"
-                       "A PAGE_FAULT OCCUR\n", 
-                       h_proc_nr, frame->vector);
+                       "(%d) %d A PAGE_FAULT OCCUR\n", 
+                       h_proc_nr, frame->vector, saved_proc->p_nb_pe,
+                       saved_proc->p_endpoint );
 #endif
                  break;
             default: 
-#if H_DEBUG
+#if 1
                  printf("ALERT ALERT FROM EXCEPTION HANDLER !!!!! \n "
                        "The system is in unstable state the guilty is %d %d\n"
-                       "OTHER EXCEPTION OCCUR\n", 
-                       h_proc_nr, frame->vector);
+                       "(%d) %d OTHER EXCEPTION OCCUR\n", 
+                       h_proc_nr, frame->vector, saved_proc->p_nb_pe,
+                       saved_proc->p_endpoint );
 #endif
                  break;
        }
@@ -362,7 +365,14 @@ void exception_handler(int is_nested, struct exception_frame * frame)
 	cause_sig(proc_nr(saved_proc), ep->signum);
 	return;
   }
-
+  if(saved_proc->p_hflags & PROC_TO_HARD)
+     printf("###EXCEPTION : %s %d ticks: %d user: %d sys: %d #####"
+             "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d"
+             "#injected_fault %d #dwc_d %d #exception_d %d vector %d step %d %d\n", 
+         saved_proc->p_name, saved_proc->p_endpoint, saved_proc->p_ticks, saved_proc->p_user_time, 
+         saved_proc->p_sys_time, saved_proc->p_nb_pe, saved_proc->p_nb_nmi, saved_proc->p_lus1_us2_size,
+         saved_proc->p_nb_abort, saved_proc->p_nb_ss, saved_proc->p_nb_inj_fault, saved_proc->p_nb_dwc_d_f,
+         saved_proc->p_nb_exception_d_f, frame->vector, h_step, h_enable);
   /* Exception in system code. This is not supposed to happen. */
   inkernel_disaster(saved_proc, frame, ep, is_nested);
 

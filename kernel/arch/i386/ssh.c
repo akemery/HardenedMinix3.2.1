@@ -90,5 +90,5 @@ void ssh_init(struct proc *p){
     return;
   }
 
-
+  h_ss_mode = 1;
 }
