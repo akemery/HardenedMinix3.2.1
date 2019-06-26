@@ -31,6 +31,8 @@
 #endif
 
 int ssh(struct proc *p){
+   if(!h_ss_mode)
+       return(OK);
    origin_syscall = PE_END_IN_NMI;
    p->p_reg.psw &= ~TRACEBIT;
    save_context(p);
@@ -42,7 +44,7 @@ int ssh(struct proc *p){
               first_run_ins++;
            else
               secnd_run_ins++;
-           if( secnd_run_ins!= first_run_ins ){
+           if( (secnd_run_ins!= first_run_ins) && !cmp_reg(p)  ){
                h_stop_pe = H_NO;
                p->p_misc_flags |= MF_STEP;
                h_unstable_state = H_STEPPING;
@@ -66,6 +68,7 @@ int ssh(struct proc *p){
 
 void ssh_init(struct proc *p){
   p->p_nb_ss++;
+  h_ss_mode = 1;
   if(secnd_run_ins < first_run_ins){
 #if H_DEBUG
    printf("Stepping start from (2) 0x%x to 0x%x\n",
@@ -90,5 +93,4 @@ void ssh_init(struct proc *p){
     return;
   }
 
-  h_ss_mode = 1;
 }

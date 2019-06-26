@@ -50,7 +50,7 @@ int do_clear(struct proc * caller, message * m_ptr)
   /* Add by EKA: free the PE working set list */
 
    if(rc->p_hflags & PROC_TO_HARD){
-#if H_DEBUG_4
+#if 1
       printf("###STATS : %s %d ticks: %d user: %d sys: %d #####"
              "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d"
              "#injected_fault %d #dwc_d %d #exception_d %d\n", 
@@ -58,6 +58,17 @@ int do_clear(struct proc * caller, message * m_ptr)
          rc->p_sys_time, rc->p_nb_pe, rc->p_nb_nmi, rc->p_lus1_us2_size,
          rc->p_nb_abort, rc->p_nb_ss, rc->p_nb_inj_fault, rc->p_nb_dwc_d_f,
          rc->p_nb_exception_d_f);
+      printf("## Cycles %s total %d %d chk_vaddr %d %d reset_pram %d %d "
+         " set_to_ro %d %d cmp %d %d\n",
+              rc->p_name, ex64hi(rc->p_cycles), ex64lo(rc->p_cycles), 
+              ex64hi(rc->p_check_vaddr_2_tsc), ex64lo(rc->p_check_vaddr_2_tsc),
+              ex64hi(rc->p_reset_pram_tsc), ex64lo(rc->p_reset_pram_tsc),
+              ex64hi(rc->p_set_ro_tsc), ex64lo(rc->p_set_ro_tsc),
+              ex64hi(rc->p_cmp_tsc), ex64lo(rc->p_cmp_tsc));
+      printf("## Times %s total %d  chk_vaddr %d  reset_pram %d "
+         " set_to_ro %d cmp %d\n",
+              rc->p_name, cpu_time_2_ms(rc->p_cycles), rc->p_check_vaddr_2_t, 
+              rc->p_reset_pram_t, rc->p_set_ro_t, rc->p_cmp_t);
 #endif
       free_pram_mem_blocks(rc, 1);
       handle_hsr_events(rc);

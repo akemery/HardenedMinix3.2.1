@@ -159,7 +159,15 @@ struct proc {
   int p_nb_exception_d_f;
   int p_nb_interrupt;
   int p_last_inject_pe;
-
+  int p_sig_delay;
+  u64_t p_check_vaddr_2_tsc;
+  u64_t p_reset_pram_tsc;
+  u64_t p_set_ro_tsc;
+  u32_t p_check_vaddr_2_t;
+  u32_t p_reset_pram_t;
+  u32_t p_set_ro_t;
+  u64_t p_cmp_tsc;
+  u32_t p_cmp_t;
 #if DEBUG_TRACE
   int p_schedules;
 #endif

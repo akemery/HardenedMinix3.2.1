@@ -168,7 +168,8 @@ irq_hook_t *hook;
    */
   priv(proc_addr(proc_nr))->s_int_pending |= (1 << hook->notify_id);
    /* Added by EKA */
-#if 0
+#if H_DEBUG
+     if(h_enable)
      printf("&&&&&& INTERRUPT &&&&&&&&&& p: %d irq: %d h_p: %d\n"
           , hook->proc_nr_e, hook->irq, h_proc_nr );
 #endif

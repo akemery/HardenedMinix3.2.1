@@ -271,6 +271,7 @@ void exception_handler(int is_nested, struct exception_frame * frame)
      printf("got spurious exception %d\n", frame->vector);
 #endif
      h_exception = 0;
+     h_ss_mode = 0;
      return;
   }
   /*End Added By EKA*/
@@ -350,11 +351,11 @@ void exception_handler(int is_nested, struct exception_frame * frame)
    * is_nested non-zero.
    */
   if (is_nested == 0 && ! iskernelp(saved_proc)) {
-#if 0
+#if 1
 	{
-
+                if(h_enable)
   		printf(
-  "vec_nr= %d, trap_errno= 0x%lx, eip= 0x%lx, cs= 0x%x, eflags= 0x%lx\n",
+  "FROM HERE?? vec_nr= %d, trap_errno= 0x%lx, eip= 0x%lx, cs= 0x%x, eflags= 0x%lx\n",
 			frame->vector, (unsigned long)frame->errcode,
 			(unsigned long)frame->eip, frame->cs,
 			(unsigned long)frame->eflags);
@@ -365,14 +366,6 @@ void exception_handler(int is_nested, struct exception_frame * frame)
 	cause_sig(proc_nr(saved_proc), ep->signum);
 	return;
   }
-  if(saved_proc->p_hflags & PROC_TO_HARD)
-     printf("###EXCEPTION : %s %d ticks: %d user: %d sys: %d #####"
-             "#PE %d #NMI %d #US1_US2_SIZE %d #abortpe %d #sspe %d"
-             "#injected_fault %d #dwc_d %d #exception_d %d vector %d step %d %d\n", 
-         saved_proc->p_name, saved_proc->p_endpoint, saved_proc->p_ticks, saved_proc->p_user_time, 
-         saved_proc->p_sys_time, saved_proc->p_nb_pe, saved_proc->p_nb_nmi, saved_proc->p_lus1_us2_size,
-         saved_proc->p_nb_abort, saved_proc->p_nb_ss, saved_proc->p_nb_inj_fault, saved_proc->p_nb_dwc_d_f,
-         saved_proc->p_nb_exception_d_f, frame->vector, h_step, h_enable);
   /* Exception in system code. This is not supposed to happen. */
   inkernel_disaster(saved_proc, frame, ep, is_nested);
 

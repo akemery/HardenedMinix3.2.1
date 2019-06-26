@@ -94,13 +94,25 @@ struct proc *rp;			/* pointer to the process */
   if ((rp->p_misc_flags & MF_VIRT_TIMER) && rp->p_virt_left <= 0) {
       rp->p_misc_flags &= ~MF_VIRT_TIMER;
       rp->p_virt_left = 0;
-      cause_sig(rp->p_nr, SIGVTALRM);
+      /*Added by EKA*/
+      if(h_enable && (h_proc_nr == rp->p_nr)){
+          rp->p_sig_delay = SIGVTALRM;
+      }
+      else 
+      /*End added by EKA*/
+         cause_sig(rp->p_nr, SIGVTALRM);
   }
 
   /* Check if the profile timer expired. If so, send a SIGPROF signal. */
   if ((rp->p_misc_flags & MF_PROF_TIMER) && rp->p_prof_left <= 0) {
       rp->p_misc_flags &= ~MF_PROF_TIMER;
       rp->p_prof_left = 0;
+      /*Added by EKA*/
+      if(h_enable && (h_proc_nr == rp->p_nr)){
+          rp->p_sig_delay = SIGPROF;
+      }
+      else 
+      /*End added by EKA*/
       cause_sig(rp->p_nr, SIGPROF);
   }
 }

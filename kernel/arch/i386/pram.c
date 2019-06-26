@@ -42,6 +42,7 @@ static struct pram_mem_block *
    vir_bytes vaddr, phys_bytes us1, phys_bytes us2);
 static void vm_setpt_to_ro(struct proc *p,
    u32_t *pagetable, const u32_t v);
+int cmp_64(u64_t a, u64_t b);
 /*============================================*
  *		check_vaddr_2                 *
  *============================================*/
@@ -71,6 +72,8 @@ int check_vaddr_2(struct proc *p,
  * store for the first and the s
  * second run. That is used during the comparison step.
  **/
+   u64_t check_vaddr_2_start_tsc, check_vaddr_2_end_tsc;
+   read_tsc_64(&check_vaddr_2_start_tsc);
    int pde, pte;
    u32_t pde_v, *pte_a, pte_v;
    int nblocks;
@@ -94,16 +97,32 @@ int check_vaddr_2(struct proc *p,
    /* check if the pde entry is present ,
     * writable, not user, global
     * bigpage . Let the VM handle */
-   if(check_pt_entry(pde_v)!=OK) 
+   if(check_pt_entry(pde_v)!=OK) {
+       read_tsc_64(&check_vaddr_2_end_tsc);
+       if(cmp_64(p->p_check_vaddr_2_tsc,ms_2_cpu_time(2))){
+        p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+        make_zero64(p->p_check_vaddr_2_tsc);
+       }
+       p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+          check_vaddr_2_start_tsc));
        return(VM_HANDLED_NO_ACESS);
+   }
    /**read the page table address**/
    pte_a = (u32_t *) I386_VM_PFA(pde_v);
    /* read the page table entry value */
    pte_v = phys_get32((u32_t) (pte_a + pte));
    /* check the presence. If not present,
     * let the VM handle it*/
-   if(!(pte_v & I386_VM_PRESENT))  
+   if(!(pte_v & I386_VM_PRESENT)) { 
+       read_tsc_64(&check_vaddr_2_end_tsc);
+       if(cmp_64(p->p_check_vaddr_2_tsc, ms_2_cpu_time(2))){
+        p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+        make_zero64(p->p_check_vaddr_2_tsc);
+       }
+       p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+          check_vaddr_2_start_tsc));
        return(VM_HANDLED_NO_PRESENT);
+   }
    /* be sure that it is a modified page table entry 
     * otherwise let the VM handle it*/
    /* read the current frame value*/
@@ -120,6 +139,13 @@ int check_vaddr_2(struct proc *p,
              "initiale working set"
            "%d %d 0x%lx\n", h_proc_nr, h_step, vaddr);
 #endif
+     read_tsc_64(&check_vaddr_2_end_tsc);
+     if(cmp_64(p->p_check_vaddr_2_tsc, ms_2_cpu_time(2))){
+        p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+        make_zero64(p->p_check_vaddr_2_tsc);
+      }
+     p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,
+          sub64(check_vaddr_2_end_tsc, check_vaddr_2_start_tsc));
       return(VM_HANDLED_PF_ABS_WS);
    }      
 #if CHECK_DEBUG
@@ -138,15 +164,31 @@ int check_vaddr_2(struct proc *p,
            "%d %d 0x%lx\n", h_proc_nr, h_step, vaddr);
 #endif
       if(h_step == FIRST_RUN){
-         if(pmb->flags & H_FORK)
+         if(pmb->flags & H_FORK){
+             read_tsc_64(&check_vaddr_2_end_tsc);
+             if(cmp_64(p->p_check_vaddr_2_tsc, ms_2_cpu_time(2))){
+                p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+                make_zero64(p->p_check_vaddr_2_tsc);
+             }
+             p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+               check_vaddr_2_start_tsc));
              return(VM_HANDLED_PF_ABS_WS);
+         }
          pte_v = (pte_v & I386_VM_ADDR_MASK_INV) |  
               I386_VM_WRITE | pmb->us1;
          pmb->flags |= IWS_PF_FIRST;
       }
       else  if(h_step == SECOND_RUN){
-          if(pmb->flags & H_FORK)
+          if(pmb->flags & H_FORK){
+             read_tsc_64(&check_vaddr_2_end_tsc);
+             if(cmp_64(p->p_check_vaddr_2_tsc, ms_2_cpu_time(2))){
+               p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+               make_zero64(p->p_check_vaddr_2_tsc);
+             }
+             p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+               check_vaddr_2_start_tsc));
              return(VM_HANDLED_PF_ABS_WS);
+          }
          pte_v = (pte_v & I386_VM_ADDR_MASK_INV) |  
               I386_VM_WRITE | pmb->us2;
          pmb->flags |= IWS_PF_SECOND; 
@@ -154,6 +196,13 @@ int check_vaddr_2(struct proc *p,
       phys_set32((u32_t) (pte_a + pte), &pte_v);
       *rw = K_HANDLE_PF;
       pmb->flags |= HGET_PF; 
+      read_tsc_64(&check_vaddr_2_end_tsc);
+      if(cmp_64(p->p_check_vaddr_2_tsc , ms_2_cpu_time(2))){
+        p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+        make_zero64(p->p_check_vaddr_2_tsc);
+      }
+      p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+          check_vaddr_2_start_tsc));
       return(OK);
    }else if(h_step == FIRST_RUN){
        /* VM_HR1PAGEFAULT: 
@@ -181,6 +230,13 @@ int check_vaddr_2(struct proc *p,
    nblocks = look_up_unique_pte(p, 
      I386_VM_PDE(vaddr),I386_VM_PTE(vaddr) );
    assert(nblocks <= 1);
+   read_tsc_64(&check_vaddr_2_end_tsc);
+   if(cmp_64(p->p_check_vaddr_2_tsc, ms_2_cpu_time(2))){
+        p->p_check_vaddr_2_t += cpu_time_2_ms(p->p_check_vaddr_2_tsc);
+        make_zero64(p->p_check_vaddr_2_tsc);
+   }
+   p->p_check_vaddr_2_tsc = add64(p->p_check_vaddr_2_tsc,sub64(check_vaddr_2_end_tsc, 
+          check_vaddr_2_start_tsc));
    return(OK);
 }
 
@@ -387,46 +443,26 @@ void vm_reset_pram(struct proc *p,
     * the comparison succeeded
     *
     */
+   u64_t reset_pram_start_tsc, reset_pram_end_tsc;
+   read_tsc_64(&reset_pram_start_tsc);
    assert(p->p_nr != VM_PROC_NR);
    if(p->p_lus1_us2_size <= 0)
       return;
    struct pram_mem_block *pmb = p->p_lus1_us2;
       /** Go through the working set list**/
    while(pmb){
-#if CHECK_DEBUG
-      assert(pmb->us0!=MAP_NONE);
-      assert(pmb->us1!=MAP_NONE);
-      assert(pmb->us2!=MAP_NONE);
-      if((pmb->us0 == MAP_NONE) ||
-          (pmb->us1 == MAP_NONE) ||
-         (pmb->us2 == MAP_NONE)){
-         pmb = pmb->next_pmb;
-         continue;
-    }
-#endif 
+
    /** Yes a page fault occu get the pte and the pde**/
    int pde, pte;
    u32_t pde_v, *pte_a, pte_v;
    pde = I386_VM_PDE(pmb->vaddr);
    pte = I386_VM_PTE(pmb->vaddr);
    /** Read the page directory value entry**/
-   pde_v = phys_get32((u32_t) (root + pde));
-#if CHECK_DEBUG
-   /**Check PRESENT, WRITE, USER, GLOBAL and BIGPAGE**/
-   assert((pde_v & I386_VM_PRESENT));
-   assert((pde_v & I386_VM_WRITE));
-   assert((pde_v & I386_VM_USER));
-   assert(!(pde_v & I386_VM_GLOBAL));
-   assert(!(pde_v & I386_VM_BIGPAGE));
-#endif
-    /** Read the page table addresse**/
+   pde_v = phys_get32((u32_t) (root + pde));   
+   /** Read the page table addresse**/
    pte_a = (u32_t *) I386_VM_PFA(pde_v);
    /** Read the page table entry value**/
    pte_v = phys_get32((u32_t) (pte_a + pte));
-#if CHECK_DEBUG
-   /** Verify the PRESENCE**/
-   assert((pte_v & I386_VM_PRESENT));
-#endif
    /** Read the frame address**/
    u32_t pfa = I386_VM_PFA(pte_v);
 
@@ -469,19 +505,16 @@ void vm_reset_pram(struct proc *p,
        ** During the second RUN the PE will make 
        * the same page fault
        **/
+#if H_DEBUG
       if(!(pte_v & I386_VM_DIRTY) && 
             (pmb->flags & IWS_PF_FIRST)){
              pmb->flags &= ~IWS_PF_FIRST;
-#if H_DEBUG
              printf("NO FIRST DIRTY BIT MODIFIED"
                 " 0x%lx pram 0x%lx " 
                      "first 0x%lx second 0x%lx\n", 
              pmb->vaddr, pmb->us0, 
              pmb->us1, pmb->us2);
-#endif
       }
-
-#if H_DEBUG
       if(pmb->flags & WS_SHARED){
               printf("FIRST SHARED PAGE 0x%lx"
               " pram 0x%lx " 
@@ -541,18 +574,18 @@ void vm_reset_pram(struct proc *p,
              * put to RO before starting the PE. 
              * Otherwise it will be
              * ignored **/
+#if H_DEBUG
              if(!(pte_v & I386_VM_DIRTY) && 
                 (pmb->flags & IWS_PF_SECOND)){
                  pmb->flags &= ~IWS_PF_SECOND;
-#if H_DEBUG
+
                  printf("NO SECOND DIRTY BIT MODIFIED"
                    " 0x%lx pram 0x%lx " 
                      "first 0x%lx second 0x%lx\n", 
                   pmb->vaddr, pmb->us0, 
                   pmb->us1, pmb->us2);
-#endif
+
              }
-#if H_DEBUG
              if(pmb->flags & WS_SHARED){
                  printf("SECOND SHARED PAGE "
                      "0x%lx pram 0x%lx " 
@@ -668,6 +701,13 @@ void vm_reset_pram(struct proc *p,
     pmb = pmb->next_pmb;
   }
   refresh_tlb();
+  read_tsc_64(&reset_pram_end_tsc);
+  if(cmp_64(p->p_reset_pram_tsc , ms_2_cpu_time(2))){
+        p->p_reset_pram_t += cpu_time_2_ms(p->p_reset_pram_tsc);
+        make_zero64(p->p_reset_pram_tsc);
+   }
+  p->p_reset_pram_tsc = add64(p->p_reset_pram_tsc,
+    sub64(reset_pram_end_tsc, reset_pram_start_tsc));
 }
 
 
@@ -869,6 +909,8 @@ static struct pram_mem_block * add_pmb_vaddr(
 
 
 int set_pe_mem_to_ro(struct proc *p, u32_t *root){
+   u64_t p_set_ro_start_tsc, p_set_ro_end_tsc;
+   read_tsc_64(&p_set_ro_start_tsc);
    int pte, pde;
    u32_t pde_v, pte_v, pfa; // pde entry value
    u32_t *pte_a; // page table address
@@ -992,6 +1034,13 @@ int set_pe_mem_to_ro(struct proc *p, u32_t *root){
          phys_set32((u32_t) (pte_a + pte), &pte_v);
          pmb = pmb->next_pmb;
    }
+   read_tsc_64(&p_set_ro_end_tsc);
+   if(cmp_64(p->p_set_ro_tsc, ms_2_cpu_time(2))){
+        p->p_set_ro_t += cpu_time_2_ms(p->p_set_ro_tsc);
+        make_zero64(p->p_set_ro_tsc);
+   }
+   p->p_set_ro_tsc = add64(p->p_set_ro_tsc,
+           sub64(p_set_ro_end_tsc, p_set_ro_start_tsc));
    return(OK);
 }
 
@@ -1175,4 +1224,10 @@ void set_exec_label(struct proc *p){
         pmb->flags = H_EXEC;
 	pmb = pmb->next_pmb;
   }
+}
+
+int cmp_64(u64_t a, u64_t b){
+   return(ex64hi(a) > ex64hi(b) ||
+	   (ex64hi(a) == ex64hi(b) &&
+	   ex64lo(a) > ex64lo(b)));
 }

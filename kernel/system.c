@@ -437,10 +437,6 @@ int sig_nr;			/* signal to be sent */
        return;
   }
 
-   if(h_enable)
-       printf("FROM cause sig !!!!! \n "
-              "The system got a signal %d %d %d\n", 
-             h_proc_nr, sig_nr, proc_nr);
   /** end added by EKA **/
 
   /* If the target is the signal manager of itself, send the signal directly. */

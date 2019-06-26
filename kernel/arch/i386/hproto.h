@@ -83,6 +83,7 @@ int look_up_page_in_hsr(struct proc *rp,
 void save_context(struct proc *p);
 void restore_for_stepping_first_run(struct proc *p);
 void abort_pe(struct proc *p);
+int cmp_reg(struct proc *p);
 /*pram.c*/
 int check_vaddr_2(struct proc *p, u32_t *root, vir_bytes vaddr, int *rw);
 struct pram_mem_block *  look_up_pte(struct proc *current_p,
@@ -90,6 +91,7 @@ struct pram_mem_block *  look_up_pte(struct proc *current_p,
 struct pram_mem_block *get_pmb(void);
 void set_fork_label(struct proc *p);
 void set_exec_label(struct proc *p);
+int cmp_64(u64_t a, u64_t b);
 
 /*ssh.c*/
 void ssh_init(struct proc *p);

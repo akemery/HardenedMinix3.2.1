@@ -65,7 +65,7 @@ void hardening_exception_handler(
    assert(h_proc_nr != VM_PROC_NR);
    get_remain_ins_counter_value(p);
    h_stop_pe = H_YES;
-#if 1
+#if H_DEBUG
      if(frame->vector!=PAGE_FAULT_VECTOR)
      printf("#### GOT EXCEPTION %d %d %d (%d) {%d} ####\n", 
             h_step,h_proc_nr,p->p_nr, frame->vector, origin_syscall);
@@ -74,14 +74,14 @@ void hardening_exception_handler(
       case DIVIDE_VECTOR :
            break;
       case DEBUG_VECTOR :
-#if 1
+#if H_DEBUG
            printf("#### GOT DEBUG %d %d %d\n####", 
             h_step,h_proc_nr,p->p_nr);
 #endif
-           if(h_ss_mode){
+           //if(h_ss_mode){
               if(ssh(p)!=OK)
                  h_stop_pe = H_NO;
-           }
+           //}
            break;
       case NMI_VECTOR :
 #if H_DEBUG

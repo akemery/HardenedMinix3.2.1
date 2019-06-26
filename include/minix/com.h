@@ -1345,7 +1345,7 @@
 
 #define H_DEBUG                        0
 #define H_DEBUG_2                      0
-#define H_DEBUG_3                      0
+#define H_DEBUG_3                      1
 #define H_DEBUG_4                      1
 
 #define HADDREGIONTOWS_ENDPT	        m10_i4	/* process endpoint */

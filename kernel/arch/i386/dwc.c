@@ -35,7 +35,6 @@ static void restore_copy_0(struct proc* p);
 static void restore_copy_1(struct proc* p);
 static void save_copy_2(struct proc *p);
 static int cmp_mem(struct proc *p);
-static int cmp_reg(struct proc *p);
 static void save_copy_1(struct proc *p);
 void static reset_hardened_run(struct proc *p);
 void start_dwc(struct proc *p){
@@ -264,7 +263,7 @@ void hardening_task(void){
             p->p_nr, origin_syscall);
 #endif
           if((origin_syscall == PE_END_IN_NMI) &&
-              (secnd_run_ins!= first_run_ins)){
+              (secnd_run_ins!= first_run_ins) && !cmp_reg(p) ){
              ssh_init(p);
              return;
           }
@@ -321,8 +320,9 @@ cmp_step:  if(!cmp_reg(p) || cmp_mem(p)!=OK){
 
 void static reset_hardened_run(struct proc *p){
    /* reset of hardening global variables */
-       if(origin_syscall == PE_END_IN_NMI) 
+       if(origin_syscall == PE_END_IN_NMI) {
            h_exception = 1; /* tell the excception handler to return*/
+       }
        h_enable = 0;
        h_proc_nr = 0;
        h_step_back = 0;
@@ -347,11 +347,16 @@ void static reset_hardened_run(struct proc *p){
        pagefault_addr_2 = 0;
        nbpe++;
        p->p_nb_pe++;
+
        //could_inject = H_YES;
        if(p->p_misc_flags & MF_STEP)
            p->p_misc_flags &= ~MF_STEP;
-       h_ss_mode = 0;
-#if 1
+       if(p->p_sig_delay!=-1){
+           printf("PE OK #sigdelay : %d\n", p->p_sig_delay);
+           cause_sig(p->p_nr, p->p_sig_delay);
+           p->p_sig_delay=-1;
+       }
+#if H_DEBUG
        printf("PE OK #ws: %d #us1_us2: %d nbpe: %d ticks %d  #pe %d\n",
             p->p_workingset_size,
                        p->p_lus1_us2_size, nbpe, p->p_ticks, p->p_nb_pe);
@@ -363,8 +368,18 @@ void static reset_hardened_run(struct proc *p){
  *===============================================*/
 
 static int cmp_mem(struct proc *p){
-   if(p->p_lus1_us2_size <= 0)
+   u64_t cmp_start_tsc, cmp_end_tsc;
+   read_tsc_64(&cmp_start_tsc);
+   if(p->p_lus1_us2_size <= 0){
+          read_tsc_64(&cmp_end_tsc);
+          if(cmp_64(p->p_cmp_tsc , ms_2_cpu_time(2))){
+                 p->p_cmp_t += cpu_time_2_ms(p->p_cmp_tsc);
+                 make_zero64(p->p_cmp_tsc);
+          }
+          p->p_cmp_tsc = add64(p->p_cmp_tsc,
+                 sub64(cmp_end_tsc, cmp_start_tsc));
           return(OK);
+   }
    int r = OK;
    struct pram_mem_block *pmb = p->p_lus1_us2;
    p->p_workingset_size = 0;
@@ -379,6 +394,13 @@ static int cmp_mem(struct proc *p){
             printf("&&& diff vaddr 0x%lx pram 0x%lx "
               " temp 0x%lx 0x%lx\n", pmb->vaddr,
                  pmb->us0, pmb->us1, pmb->us2);
+             read_tsc_64(&cmp_end_tsc);
+             if(cmp_64(p->p_cmp_tsc , ms_2_cpu_time(2))){
+                 p->p_cmp_t += cpu_time_2_ms(p->p_cmp_tsc);
+                 make_zero64(p->p_cmp_tsc);
+             }
+             p->p_cmp_tsc = add64(p->p_cmp_tsc,
+                 sub64(cmp_end_tsc, cmp_start_tsc));
             return (r);
          }
          p->p_workingset_size++;
@@ -392,13 +414,20 @@ static int cmp_mem(struct proc *p){
       }
       pmb = pmb->next_pmb;
      }
+    read_tsc_64(&cmp_end_tsc);
+    if(cmp_64(p->p_cmp_tsc , ms_2_cpu_time(2))){
+        p->p_cmp_t += cpu_time_2_ms(p->p_cmp_tsc);
+        make_zero64(p->p_cmp_tsc);
+    }
+    p->p_cmp_tsc = add64(p->p_cmp_tsc,
+    sub64(cmp_end_tsc, cmp_start_tsc));
     return (r);
 }
 
 /*===========================================*
  *				cmp_reg      *
  *===========================================*/
-static int cmp_reg(struct proc *p){
+int cmp_reg(struct proc *p){
    /** Compare registers from first run and second run
     ** If one pair of register is different the return
     *  value is 0

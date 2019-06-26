@@ -160,6 +160,15 @@ int do_fork(struct proc * caller, message * m_ptr)
   rpc->p_nb_exception_d_f = 0;
   rpc->p_nb_interrupt = 0;
   rpc->p_last_inject_pe = 0;
+  rpc->p_sig_delay = -1;
+  make_zero64(rpc->p_check_vaddr_2_tsc);
+  make_zero64(rpc->p_reset_pram_tsc);
+  make_zero64(rpc->p_set_ro_tsc);
+  make_zero64(rpc->p_cmp_tsc);
+  rpc->p_check_vaddr_2_t = 0;
+  rpc->p_reset_pram_t = 0;
+  rpc->p_set_ro_t = 0;
+  rpc->p_cmp_t = 0;
   if(rpp->p_hflags & PROC_TO_HARD){
 #if H_DEBUG
      display_mem(rpp);
